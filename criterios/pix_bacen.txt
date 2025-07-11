@@ -1,0 +1,25 @@
+CRITÉRIOS CONFORMIDADE PIX - BACEN
+
+1. TEMPO DE PROCESSAMENTO:
+   - Transferência PIX: máximo 10 segundos
+   - Medição: P95 response time
+   - Criticidade: ALTA
+
+2. VALIDAÇÃO DE CHAVES:
+   - CPF: formato e dígitos verificadores
+   - CNPJ: formato e dígitos verificadores  
+   - Email: formato RFC válido
+   - Telefone: formato nacional +55
+   - Chave aleatória: 32 caracteres UUID
+   - Criticidade: CRÍTICA
+
+3. DISPONIBILIDADE SISTEMA:
+   - Uptime mínimo: 99.9%
+   - Tolerância downtime: 8.76h/ano
+   - Criticidade: ALTA
+
+4. AUDITORIA E LOGS:
+   - Log completo de transações
+   - Imutabilidade dos registros
+   - Rastreabilidade end-to-end
+   - Criticidade: CRÍTICA

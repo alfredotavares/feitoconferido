@@ -1,0 +1,31 @@
+{
+  "report_id": "FC_MOB_2025070801",
+  "system_name": "Mobile Banking App",
+  "repository": "mobile-banking",
+  "scan_date": "2025-07-08T11:45:00-03:00",
+  "project_info": {
+    "language": "React Native + TypeScript",
+    "lines_of_code": 34567,
+    "team_size": 6
+  },
+  "code_quality": {
+    "overall_score": 85,
+    "test_coverage": 81,
+    "bugs": 7,
+    "vulnerabilities": 4,
+    "security_rating": "B"
+  },
+  "mobile_security": {
+    "data_storage": {
+      "status": "PARTIAL_COMPLIANT",
+      "issues": [
+        "⚠️ Alguns dados sensíveis em AsyncStorage sem criptografia"
+      ]
+    },
+    "biometric_authentication": {
+      "status": "COMPLIANT"
+    }
+  },
+  "overall_status": "GOOD",
+  "risk_level": "MEDIUM"
+}

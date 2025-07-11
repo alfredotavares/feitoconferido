@@ -1,0 +1,72 @@
+{
+  "report_id": "RPT_2025070901",
+  "company": "Banco Digital Beta",
+  "audit_date": "2025-07-09",
+  "auditor": "Carlos Oliveira",
+  "timestamp": "2025-07-09T14:15:00-03:00",
+  "story_id": "story_20250709_141500",
+  "checks": {
+    "lgpd": {
+      "status": "NON_COMPLIANT",
+      "score": 45,
+      "issues": [
+        "❌ Ausência de mecanismo claro de consentimento",
+        "❌ Dados pessoais sendo coletados sem justificativa",
+        "❌ Política de privacidade desatualizada"
+      ],
+      "recommendations": [
+        "🚨 URGENTE: Implementar sistema de consentimento explícito",
+        "🚨 Revisar e adequar coleta de dados às finalidades",
+        "🚨 Atualizar política de privacidade conforme LGPD"
+      ]
+    },
+    "pci_dss": {
+      "status": "CRITICAL",
+      "score": 32,
+      "issues": [
+        "💥 Dados de cartão armazenados sem criptografia",
+        "💥 Ausência de segmentação de rede",
+        "💥 Logs de transação sem proteção adequada"
+      ],
+      "recommendations": [
+        "🚨 CRÍTICO: Criptografar todos os dados de cartão imediatamente",
+        "🚨 Implementar segmentação de rede para ambiente de cartões",
+        "🚨 Configurar logs seguros com retenção adequada"
+      ]
+    },
+    "bacen": {
+      "status": "PARTIAL",
+      "score": 67,
+      "issues": [
+        "⚠️ Plano de continuidade de negócios incompleto",
+        "⚠️ Controles de riscos operacionais insuficientes"
+      ],
+      "recommendations": [
+        "🔧 Completar mapeamento de riscos operacionais",
+        "🔧 Desenvolver cenários de teste para continuidade",
+        "🔧 Implementar controles automatizados de risco"
+      ]
+    },
+    "security": {
+      "status": "NON_COMPLIANT",
+      "score": 41,
+      "issues": [
+        "❌ Firewall com regras muito permissivas",
+        "❌ Autenticação multifator não implementada",
+        "❌ Monitoramento de segurança insuficiente"
+      ],
+      "recommendations": [
+        "🔧 Restringir regras de firewall ao mínimo necessário",
+        "🔧 Implementar MFA para todos os usuários críticos",
+        "🔧 Configurar SIEM para monitoramento 24/7"
+      ]
+    }
+  },
+  "overall_status": "CRITICAL",
+  "risk_level": "CRITICAL",
+  "recommendations": [
+    "🚨 AÇÃO IMEDIATA: Suspender operações até adequação PCI-DSS",
+    "🚨 Contratar consultoria especializada em segurança financeira",
+    "🚨 Implementar programa de remediação em 30 dias"
+  ]
+}

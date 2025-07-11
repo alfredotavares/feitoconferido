@@ -1,0 +1,13 @@
+{
+  "componentes_implementados": "Componentes devem estar entregues conforme o proposto.",
+  "comunicacao_implementada": "Comunicação deve estar operando corretamente.",
+  "componentes_alterados_ou_removidos": "Mudanças precisam seguir o desenho aprovado.",
+  "backend_plataformizacao_aplicada": "Backend deve seguir o novo chassi padrão.",
+  "frontend_plataformizacao_aplicada": "Frontend deve ser migrado para o novo chassi.",
+  "patterns_implementados": "Padrões como EDA devem estar aplicados.",
+  "escalabilidade_vertical_configurada": "Deve conter limites e requests de CPU e memória.",
+  "escalabilidade_horizontal_configurada": "HPA precisa estar ativo conforme a solução.",
+  "componente_sinalizado_sair": "Alterações devem ser sinalizadas no radar.",
+  "issue_debito_tecnico": "Débitos técnicos precisam ser registrados.",
+  "issue_arquitetura_transicao": "Arquitetura de transição deve ser documentada se aplicável."
+}

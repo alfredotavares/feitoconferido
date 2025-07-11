@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-07-09 16:21:00-03",
+  "checks": {
+    "Conformidade com Processamento de Dados": {
+      "status": "NON-COMPLIANT",
+      "issues": [
+        "Ausência de técnicas de anonimização para dados sensíveis",
+        "Falta de política de retenção de dados definida"
+      ],
+      "recommendations": [
+        "Implementar técnicas de anonimização de dados sensíveis",
+        "Definir e documentar política de retenção de dados conforme LGPD Art. 15"
+      ]
+    }
+  }
+}

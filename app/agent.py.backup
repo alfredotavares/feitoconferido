@@ -1,0 +1,116 @@
+from google.adk.agents import Agent
+
+def load_reports():
+    """Carrega relatórios da pasta data"""
+    import json
+    import os
+    
+    reports = []
+    base_path = os.path.join(os.path.dirname(__file__), '..', 'data')
+    
+    if not os.path.exists(base_path):
+        return reports
+    
+    try:
+        for file in os.listdir(base_path):
+            if file.endswith('.json'):
+                with open(os.path.join(base_path, file), 'r') as f:
+                    report = json.load(f)
+                    report['_source_file'] = file
+                    reports.append(report)
+    except Exception:
+        pass
+    
+    return reports
+
+def analisar_conformidade(pergunta: str = "") -> str:
+    """Analisa conformidade técnica dos sistemas"""
+    reports = load_reports()
+    
+    if not reports:
+        return "❌ Nenhum relatório de conformidade encontrado"
+    
+    # Filtrar por tipo de pergunta
+    if "pix" in pergunta.lower():
+        # Buscar relatório PIX
+        for report in reports:
+            if "pix" in report.get('system_name', '').lower():
+                req_compliance = report.get('requirements_compliance', {})
+                design = report.get('technical_design', {})
+                assessment = report.get('overall_assessment', {})
+                
+                return f"""🔍 ANÁLISE PIX - CONFORMIDADE BACEN
+
+📋 REQUISITOS BACEN:
+✅ Req. 001: {req_compliance.get('bacen_req_001', {}).get('status', 'N/A')} - {req_compliance.get('bacen_req_001', {}).get('evidence', '')}
+⚠️ Req. 002: {req_compliance.get('bacen_req_002', {}).get('status', 'N/A')} - Gaps: {', '.join(req_compliance.get('bacen_req_002', {}).get('gaps', []))}
+
+🏗️ DESENHO TÉCNICO:
+- Arquitetura: {design.get('architecture', 'N/A')}
+- Score de Coerência: {design.get('coherence_score', 'N/A')}%
+- Pontos Fortes: {', '.join(design.get('strengths', []))}
+- Preocupações: {', '.join(design.get('concerns', []))}
+
+📊 AVALIAÇÃO GERAL:
+- Conformidade Requisitos: {assessment.get('requirements_compliance', 'N/A')}
+- Coerência Design: {assessment.get('design_coherence', 'N/A')}
+- Pronto para Produção: {assessment.get('ready_for_production', 'N/A')}"""
+    
+    elif "etl" in pergunta.lower() or "carga" in pergunta.lower():
+        # Buscar relatório ETL
+        for report in reports:
+            if "etl" in report.get('system_name', '').lower():
+                practices = report.get('best_practices_analysis', {})
+                assessment = report.get('overall_assessment', {})
+                
+                return f"""🔍 ANÁLISE ETL - BOAS PRÁTICAS
+
+📊 QUALIDADE DE DADOS: {practices.get('data_quality', {}).get('score', 'N/A')}% - {practices.get('data_quality', {}).get('status', 'N/A')}
+⚡ PERFORMANCE: {practices.get('performance', {}).get('score', 'N/A')}% - {practices.get('performance', {}).get('status', 'N/A')}
+🔄 CONFIABILIDADE: {practices.get('reliability', {}).get('score', 'N/A')}% - {practices.get('reliability', {}).get('status', 'N/A')}
+🔒 SEGURANÇA: {practices.get('security', {}).get('score', 'N/A')}% - {practices.get('security', {}).get('status', 'N/A')}
+
+📋 GAPS IDENTIFICADOS:
+{', '.join(practices.get('reliability', {}).get('gaps', []))}
+
+📊 AVALIAÇÃO GERAL:
+- Aderência às Boas Práticas: {assessment.get('best_practices_compliance', 'N/A')}
+- Pronto para Produção: {assessment.get('production_ready', 'N/A')}
+- Nível de Risco: {assessment.get('risk_level', 'N/A')}"""
+    
+    else:
+        # Análise geral
+        result = f"📊 FEITO CONFERIDO - {len(reports)} SISTEMAS ANALISADOS\n\n"
+        
+        for report in reports:
+            name = report.get('system_name', 'Sistema')
+            assessment = report.get('overall_assessment', {})
+            
+            if 'requirements_compliance' in assessment:
+                compliance = assessment['requirements_compliance']
+                result += f"🔍 {name}: {compliance} compliance\n"
+            elif 'best_practices_compliance' in assessment:
+                compliance = assessment['best_practices_compliance']
+                result += f"🔍 {name}: {compliance} boas práticas\n"
+            elif 'security_score' in assessment:
+                score = assessment['security_score']
+                result += f"🔍 {name}: {score} segurança\n"
+        
+        return result
+
+root_agent = Agent(
+    name="feito_conferido_agent",
+    model="gemini-2.0-flash",
+    description="Especialista em análise de conformidade técnica - Projeto Feito Conferido",
+    instruction="""Você é o FEITO CONFERIDO, um agente especialista em análise de conformidade técnica.
+
+Use analisar_conformidade para responder sobre:
+- Conformidade PIX com requisitos BACEN
+- Análise de desenho técnico e coerência arquitetural  
+- Aderência a boas práticas de ETL
+- Análise de segurança mobile
+- Status geral de conformidade
+
+Seja técnico, direto e focado em resultados acionáveis.""",
+    tools=[analisar_conformidade]
+)

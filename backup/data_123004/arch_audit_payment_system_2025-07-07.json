@@ -1,0 +1,38 @@
+{
+  "report_id": "ARCH_2025070701",
+  "system_name": "Payment Processing System",
+  "company": "PayFlow Solutions",
+  "audit_date": "2025-07-07",
+  "architect": "Maria Oliveira",
+  "timestamp": "2025-07-07T16:20:00-03:00",
+  "architecture_type": "Hybrid Microservices",
+  "technology_stack": ["Python Flask", "PostgreSQL", "RabbitMQ", "Docker", "AWS"],
+  "architecture_analysis": {
+    "scalability": {
+      "status": "PARTIAL",
+      "score": 67,
+      "issues": [
+        "⚠️ Alguns serviços ainda monolíticos",
+        "⚠️ Database bottlenecks identificados"
+      ]
+    },
+    "data_architecture": {
+      "status": "NON_COMPLIANT",
+      "score": 45,
+      "issues": [
+        "❌ Database compartilhado entre domínios",
+        "❌ Transações distribuídas mal implementadas"
+      ]
+    }
+  },
+  "code_quality": {
+    "test_coverage": 64,
+    "code_smells": 156,
+    "vulnerabilities": 8,
+    "technical_debt": "67h 20min",
+    "maintainability_rating": "C",
+    "security_rating": "C"
+  },
+  "overall_status": "PARTIAL",
+  "risk_level": "MEDIUM"
+}

@@ -1,0 +1,58 @@
+{
+  "report_id": "RPT_2025070801",
+  "company": "FinanceGreen Startup",
+  "audit_date": "2025-07-08",
+  "auditor": "Ana Silva",
+  "timestamp": "2025-07-08T11:45:00-03:00",
+  "story_id": "story_20250708_114500",
+  "checks": {
+    "lgpd": {
+      "status": "COMPLIANT",
+      "score": 91,
+      "issues": [
+        "⚠️ Alguns cookies não categorizados adequadamente"
+      ],
+      "recommendations": [
+        "✅ Excelente implementação de privacy by design",
+        "🔧 Categorizar e documentar todos os cookies utilizados",
+        "✅ Portal de direitos do titular funcionando perfeitamente"
+      ]
+    },
+    "pci_dss": {
+      "status": "NOT_APPLICABLE",
+      "score": null,
+      "issues": [],
+      "recommendations": [
+        "ℹ️ Empresa não processa dados de cartão de crédito",
+        "ℹ️ Utiliza gateway de pagamento terceirizado certificado"
+      ]
+    },
+    "bacen": {
+      "status": "COMPLIANT",
+      "score": 89,
+      "issues": [],
+      "recommendations": [
+        "✅ Controles de riscos bem estruturados",
+        "✅ Governança corporativa adequada ao porte",
+        "✅ Relatórios regulatórios em dia"
+      ]
+    },
+    "security": {
+      "status": "COMPLIANT",
+      "score": 94,
+      "issues": [],
+      "recommendations": [
+        "✅ Arquitetura cloud-native com boa segurança",
+        "✅ Implementação exemplar de DevSecOps",
+        "✅ Testes de penetração realizados regularmente"
+      ]
+    }
+  },
+  "overall_status": "COMPLIANT",
+  "risk_level": "LOW",
+  "recommendations": [
+    "🌟 Manter nível atual de compliance",
+    "🌟 Documentar melhores práticas para replicação",
+    "🌟 Considerar certificações de segurança adicionais"
+  ]
+}

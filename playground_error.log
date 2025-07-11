@@ -1,0 +1,139 @@
+===============================================================================
+| 🚀 Starting your agent playground...                                        |
+|                                                                             |
+| 💡 Try asking: What's the weather in San Francisco?                         |
+|                                                                             |
+| 🔍 IMPORTANT: Select the 'app' folder to interact with your agent.          |
+===============================================================================
+uv run adk web --port 8501
+/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/adk/cli/fast_api.py:334: UserWarning: [EXPERIMENTAL] InMemoryCredentialService: This feature is experimental and may change or be removed in future versions without notice. It may introduce breaking changes at any time.
+  credential_service = InMemoryCredentialService()
+/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/adk/auth/credential_service/in_memory_credential_service.py:33: UserWarning: [EXPERIMENTAL] BaseCredentialService: This feature is experimental and may change or be removed in future versions without notice. It may introduce breaking changes at any time.
+  super().__init__()
+INFO:     Started server process [1549]
+INFO:     Waiting for application startup.
+
++-----------------------------------------------------------------------------+
+| ADK Web Server started                                                      |
+|                                                                             |
+| For local testing, access at http://localhost:8501.                         |
++-----------------------------------------------------------------------------+
+
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8501 (Press CTRL+C to quit)
+INFO:     127.0.0.1:48686 - "GET /?authuser=0 HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:48686 - "GET /list-apps?relative_path=./ HTTP/1.1" 200 OK
+2025-07-10 12:20:06,426 - INFO - fast_api.py:445 - New session created
+INFO:     127.0.0.1:48686 - "POST /apps/app/users/user/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48686 - "GET /apps/app/eval_sets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48686 - "GET /apps/app/eval_results HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48686 - "GET /apps/app/users/user/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48686 - "GET /apps/app/users/user/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48686 - "POST /run_sse HTTP/1.1" 200 OK
+2025-07-10 12:20:10,611 - INFO - envs.py:47 - Loaded .env file for app at /home/adtr/agent-starter-pack/feitoconferido/.env
+2025-07-10 12:20:10,613 - INFO - envs.py:47 - Loaded .env file for app at /home/adtr/agent-starter-pack/feitoconferido/.env
+2025-07-10 12:20:10,721 - INFO - google_llm.py:90 - Sending out request, model: gemini-2.0-flash, backend: GoogleLLMVariant.VERTEX_AI, stream: False
+2025-07-10 12:20:10,722 - INFO - google_llm.py:96 - 
+LLM Request:
+-----------------------------------------------------------
+System Instruction:
+You are a helpful weather assistant.
+
+You are an agent. Your internal name is "weather_agent".
+
+ The description about you is "Weather information agent"
+-----------------------------------------------------------
+Contents:
+{"parts":[{"text":"What's the weather in New York?"}],"role":"user"}
+-----------------------------------------------------------
+Functions:
+get_weather: {'city': {'type': <Type.STRING: 'STRING'>}} -> {'type': <Type.OBJECT: 'OBJECT'>}
+-----------------------------------------------------------
+
+2025-07-10 12:20:10,723 - INFO - models.py:7421 - AFC is enabled with max remote calls: 10.
+2025-07-10 12:20:10,762 - ERROR - fast_api.py:820 - Error in event_generator: string indices must be integers, not 'str'
+Traceback (most recent call last):
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/adk/cli/fast_api.py", line 809, in event_generator
+    async for event in runner.run_async(
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 203, in run_async
+    async for event in invocation_context.agent.run_async(invocation_context):
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 147, in run_async
+    async for event in self._run_async_impl(ctx):
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 275, in _run_async_impl
+    async for event in self._llm_flow.run_async(ctx):
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 282, in run_async
+    async for event in self._run_one_step_async(invocation_context):
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 314, in _run_one_step_async
+    async for llm_response in self._call_llm_async(
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 539, in _call_llm_async
+    async for llm_response in llm.generate_content_async(
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 170, in generate_content_async
+    response = await self.api_client.aio.models.generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/genai/models.py", line 7427, in generate_content
+    response = await self._generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/genai/models.py", line 6394, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/genai/_api_client.py", line 1101, in async_request
+    result = await self._async_request(http_request=http_request, stream=False)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/genai/_api_client.py", line 1046, in _async_request
+    return await self._async_retry(  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 111, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 153, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/tenacity/_utils.py", line 99, in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/tenacity/__init__.py", line 418, in exc_check
+    raise retry_exc.reraise()
+          ^^^^^^^^^^^^^^^^^^^
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/tenacity/__init__.py", line 185, in reraise
+    raise self.last_attempt.result()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 114, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/genai/_api_client.py", line 967, in _async_request_once
+    f'Bearer {await self._async_access_token()}'
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/genai/_api_client.py", line 812, in _async_access_token
+    await asyncio.to_thread(_refresh_auth, self._credentials)
+  File "/usr/lib/python3.12/asyncio/threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/genai/_api_client.py", line 200, in _refresh_auth
+    credentials.refresh(Request())  # type: ignore[no-untyped-call]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/auth/compute_engine/credentials.py", line 126, in refresh
+    self._retrieve_info(request)
+  File "/home/adtr/agent-starter-pack/feitoconferido/.venv/lib/python3.12/site-packages/google/auth/compute_engine/credentials.py", line 103, in _retrieve_info
+    self._service_account_email = info["email"]
+                                  ~~~~^^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+INFO:     127.0.0.1:45884 - "GET /apps/app/users/user/sessions/acb3d3eb-2cf7-40af-8964-a8fc09d1d7b6 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48686 - "GET /debug/trace/session/acb3d3eb-2cf7-40af-8964-a8fc09d1d7b6 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+
++-----------------------------------------------------------------------------+
+| ADK Web Server shutting down...                                             |
++-----------------------------------------------------------------------------+
+
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1549]
+make: *** [Makefile:15: playground] Error 143

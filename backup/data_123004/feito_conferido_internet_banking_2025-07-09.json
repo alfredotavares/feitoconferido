@@ -1,0 +1,18 @@
+{
+  "report_id": "FC_IB_2025070901", 
+  "system_name": "Internet Banking Portal",
+  "scan_date": "2025-07-09T14:15:00-03:00",
+  "code_quality": {
+    "overall_score": 91,
+    "test_coverage": 89,
+    "bugs": 3,
+    "vulnerabilities": 2,
+    "security_rating": "A"
+  },
+  "compliance": {
+    "pci_dss": "COMPLIANT",
+    "lgpd": "COMPLIANT"
+  },
+  "overall_status": "EXCELLENT",
+  "risk_level": "LOW"
+}

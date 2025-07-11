@@ -1,0 +1,27 @@
+CRITÉRIOS ETL - QUALIDADE DE DADOS
+
+1. QUALIDADE DADOS:
+   - Score mínimo: 85%
+   - Schema validation obrigatório
+   - Data profiling implementado
+   - Criticidade: ALTA
+
+2. PERFORMANCE:
+   - Throughput mínimo: 1TB/hora
+   - Latência P95: máximo 30 minutos
+   - Score mínimo: 80%
+   - Criticidade: MÉDIA
+
+3. CONFIABILIDADE:
+   - MTTR máximo: 15 minutos
+   - Auto restart implementado
+   - Monitoramento ativo
+   - Score mínimo: 85%
+   - Criticidade: ALTA
+
+4. SEGURANÇA:
+   - Criptografia TLS 1.3+
+   - Data masking para PII
+   - Controle acesso RBAC
+   - Score mínimo: 90%
+   - Criticidade: CRÍTICA
