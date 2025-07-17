@@ -1,0 +1,9 @@
+CRITÉRIOS ETL QUALIDADE
+==================================================
+Gerado automaticamente baseado na análise da base de dados
+
+1. QUALIDADE DE DADOS ETL:
+   Score mínimo: 85%
+   Score atual: 92%
+   Criticidade: ALTA
+

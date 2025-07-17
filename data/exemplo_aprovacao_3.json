@@ -1,0 +1,64 @@
+{
+  "titulo": "Aprovação Arquitetura Software",
+  "arquiteto_responsavel": "Carlos Santos",
+  "ciclo_desenvolvimento": "C-978500",
+  "arquitetura": "AS-IS",
+  "componentes": [
+    "legacy-etl-processor (2.5.0 -> 2.5.1)",
+    "monolith-banking-core (3.2.0 -> 3.2.1)",
+    "jquery-frontend-portal (1.8.0 -> 1.8.1)"
+  ],
+  "validacao": {
+    "1.1_novos_componentes_implementados": {
+      "resposta": "Não",
+      "comentario": "Componentes novos não foram implementados conforme desenho"
+    },
+    "1.2_comunicacao_componentes": {
+      "resposta": "Não",
+      "comentario": "Ainda utiliza comunicação síncrona legada"
+    },
+    "1.3_componentes_alterados_removidos": {
+      "resposta": "Não",
+      "comentario": "Componentes legados mantidos sem alteração"
+    },
+    "1.4_chassi_plataformizacao_backend": {
+      "resposta": "Não",
+      "comentario": "Chassi não aplicado - mantido monolito legado"
+    },
+    "1.5_chassi_plataformizacao_frontend": {
+      "resposta": "Não",
+      "comentario": "Frontend ainda em jQuery - não migrado"
+    },
+    "3.1_patterns_solucao_implementados": {
+      "resposta": "Não",
+      "comentario": "Patterns modernos não implementados"
+    },
+    "3.2_design_patterns_implementados": {
+      "resposta": "Parcialmente",
+      "comentario": "Apenas alguns patterns básicos aplicados"
+    },
+    "4.1_escalabilidade_vertical": {
+      "resposta": "Não",
+      "comentario": "Configurações de escalabilidade não implementadas"
+    },
+    "4.2_escalabilidade_horizontal": {
+      "resposta": "Não",
+      "comentario": "HPA não configurado"
+    },
+    "6.1_componente_radar_sair": {
+      "resposta": "Sim",
+      "comentario": "Utilizando componentes marcados como SAIR no radar"
+    },
+    "7.1_issue_debito_tecnico": {
+      "resposta": "Sim",
+      "comentario": "Múltiplos débitos técnicos identificados"
+    },
+    "8.1_issue_arquitetura_transicao": {
+      "resposta": "Sim",
+      "comentario": "Necessária arquitetura de transição"
+    }
+  },
+  "issues_debito_tecnico": ["GDA-1001", "GDA-1002", "GDA-1003", "GDA-1004"],
+  "parecer_final": "Não aderente - necessita revisão"
+}
+

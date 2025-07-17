@@ -1,0 +1,9 @@
+CRITÉRIOS ETL PERFORMANCE
+==================================================
+Gerado automaticamente baseado na análise da base de dados
+
+1. PERFORMANCE ETL:
+   Score mínimo: 80%
+   Score atual: 88%
+   Criticidade: MÉDIA
+

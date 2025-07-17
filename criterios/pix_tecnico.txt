@@ -1,0 +1,9 @@
+CRITÉRIOS PIX TECNICO
+==================================================
+Gerado automaticamente baseado na análise da base de dados
+
+1. COERÊNCIA ARQUITETURAL PIX:
+   Score mínimo: 80%
+   Score atual: 85%
+   Criticidade: ALTA
+

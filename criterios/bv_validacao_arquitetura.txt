@@ -1,0 +1,35 @@
+CRITÉRIOS VALIDAÇÃO ADERÊNCIA ARQUITETURA - BANCO BV
+ESCOPO DA VALIDAÇÃO
+
+1. Os novos componentes desenhados na solução proposta foram implementados?
+   Resposta esperada: SIM
+   
+2. A comunicação entre os componentes (síncrono / assíncrono) foi implementada corretamente?
+   Resposta esperada: SIM
+   
+3. Os componentes foram alterados ou removidos conforme proposto no desenho?
+   Resposta esperada: SIM
+   
+4. A solução adotou o chassi de plataformização backend em todos os novos componentes?
+   Resposta esperada: SIM
+   
+5. A solução adotou o chassi de plataformização frontend em todos os novos componentes?
+   Resposta esperada: SIM (ou N/A se não há frontend)
+   
+6. Foram implementados os patterns indicados para os componentes de desenho da solução (ex. EDA, mensageria)?
+   Resposta esperada: SIM
+   
+7. Foram implementadas as configurações de escalabilidade vertical, conforme indicado na solução (CPU, MEM)?
+   Resposta esperada: SIM
+   
+8. Foram definidas as configurações de escalabilidade horizontal (HPA)?
+   Resposta esperada: SIM
+   
+9. Houve algum componente alterado ou criado que no radar da arquitetura está sinalizado como SAIR?
+   Resposta esperada: NÃO
+   
+10. Neste ciclo de desenvolvimento, houve necessidade de criar algum issue de débito técnico?
+    Resposta esperada: NÃO
+    
+11. Neste ciclo de desenvolvimento, houve necessidade de criar algum issue de arquitetura de transição?
+    Resposta esperada: NÃO

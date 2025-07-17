@@ -1,0 +1,48 @@
+{
+  "report_id": "ARCH_2025071001",
+  "system_name": "Banking Core API Platform",
+  "company": "Banco Digital Alpha",
+  "audit_date": "2025-07-10",
+  "architect": "Carlos Silva",
+  "timestamp": "2025-07-10T09:30:00-03:00",
+  "architecture_type": "Microservices",
+  "technology_stack": ["Java Spring Boot", "PostgreSQL", "Redis", "Apache Kafka", "Docker", "Kubernetes"],
+  "architecture_analysis": {
+    "scalability": {
+      "status": "COMPLIANT",
+      "score": 92,
+      "patterns": ["Circuit Breaker", "Load Balancing", "Auto-scaling"],
+      "issues": [],
+      "recommendations": [
+        "✅ Horizontal scaling bem implementado",
+        "🔧 Considerar implementar rate limiting dinâmico"
+      ]
+    },
+    "security_architecture": {
+      "status": "PARTIAL",
+      "score": 78,
+      "patterns": ["OAuth 2.0", "JWT", "API Gateway"],
+      "issues": [
+        "⚠️ Alguns microserviços comunicam sem mTLS",
+        "⚠️ Logs de auditoria não centralizados"
+      ]
+    },
+    "data_architecture": {
+      "status": "COMPLIANT",
+      "score": 89,
+      "patterns": ["Database per Service", "CQRS", "Event Sourcing"]
+    }
+  },
+  "code_quality": {
+    "test_coverage": 87,
+    "code_smells": 12,
+    "security_hotspots": 3,
+    "vulnerabilities": 1,
+    "technical_debt": "4h 30min",
+    "maintainability_rating": "A",
+    "reliability_rating": "A",
+    "security_rating": "B"
+  },
+  "overall_status": "COMPLIANT",
+  "risk_level": "LOW"
+}

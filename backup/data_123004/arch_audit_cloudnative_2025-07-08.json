@@ -1,0 +1,32 @@
+{
+  "report_id": "ARCH_2025070801",
+  "system_name": "FinTech Cloud-Native Platform",
+  "company": "StartupFin Digital",
+  "audit_date": "2025-07-08",
+  "architect": "Roberto Costa",
+  "timestamp": "2025-07-08T11:45:00-03:00",
+  "architecture_type": "Cloud-Native Microservices",
+  "technology_stack": ["Node.js", "TypeScript", "MongoDB", "Redis", "RabbitMQ", "Docker", "Kubernetes", "Istio"],
+  "architecture_analysis": {
+    "scalability": {
+      "status": "COMPLIANT",
+      "score": 96,
+      "patterns": ["Auto-scaling", "Load Balancing", "Circuit Breaker", "Bulkhead"]
+    },
+    "security_architecture": {
+      "status": "COMPLIANT",
+      "score": 94,
+      "patterns": ["Zero Trust", "mTLS", "OAuth 2.0", "Service Mesh"]
+    }
+  },
+  "code_quality": {
+    "test_coverage": 94,
+    "code_smells": 5,
+    "vulnerabilities": 0,
+    "technical_debt": "45min",
+    "maintainability_rating": "A",
+    "security_rating": "A"
+  },
+  "overall_status": "COMPLIANT",
+  "risk_level": "VERY_LOW"
+}

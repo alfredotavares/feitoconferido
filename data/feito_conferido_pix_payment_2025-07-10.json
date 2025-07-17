@@ -1,0 +1,39 @@
+{
+  "report_id": "FC_PIX_2025071001",
+  "system_name": "PIX Payment Processing System",
+  "repository": "pix-payment-service",
+  "scan_date": "2025-07-10T09:30:00-03:00",
+  "project_info": {
+    "language": "Java Spring Boot",
+    "lines_of_code": 45780,
+    "team_size": 8
+  },
+  "code_quality": {
+    "overall_score": 78,
+    "test_coverage": 72,
+    "bugs": 12,
+    "vulnerabilities": 8,
+    "security_rating": "C"
+  },
+  "pix_compliance": {
+    "bacen_specifications": {
+      "status": "PARTIAL_COMPLIANT",
+      "score": 82,
+      "non_compliant_items": [
+        "❌ Rate limiting não implementado conforme norma BACEN",
+        "⚠️ Validação de CPF/CNPJ não segue padrão 100%"
+      ]
+    }
+  },
+  "security_analysis": {
+    "input_validation": {
+      "status": "NON_COMPLIANT",
+      "critical_issues": [
+        "❌ SQL Injection possível em /api/transactions/search",
+        "❌ XSS vulnerabilities em 3 endpoints"
+      ]
+    }
+  },
+  "overall_status": "NEEDS_IMPROVEMENT",
+  "risk_level": "HIGH"
+}

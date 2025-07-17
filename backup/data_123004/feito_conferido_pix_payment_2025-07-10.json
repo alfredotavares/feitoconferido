@@ -1,0 +1,22 @@
+{
+  "report_id": "FC_PIX_2025071001",
+  "system_name": "PIX Payment Processing System",
+  "scan_date": "2025-07-10T09:30:00-03:00",
+  "code_quality": {
+    "overall_score": 78,
+    "test_coverage": 72,
+    "bugs": 12,
+    "vulnerabilities": 8,
+    "security_rating": "C"
+  },
+  "pix_compliance": {
+    "status": "PARTIAL_COMPLIANT",
+    "issues": [
+      "❌ SQL Injection em /api/transactions",
+      "❌ Rate limiting não implementado",
+      "⚠️ Validação CPF/CNPJ inadequada"
+    ]
+  },
+  "overall_status": "NEEDS_IMPROVEMENT",
+  "risk_level": "HIGH"
+}

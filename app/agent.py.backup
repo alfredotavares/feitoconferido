@@ -1,0 +1,118 @@
+from google.adk.agents import Agent
+import json
+import os
+
+def load_reports():
+    """Carrega relatórios da pasta data"""
+    reports = []
+    base_path = os.path.join(os.path.dirname(__file__), '..', 'data')
+    
+    if not os.path.exists(base_path):
+        return reports
+    
+    try:
+        for file in os.listdir(base_path):
+            if file.endswith('.json'):
+                with open(os.path.join(base_path, file), 'r') as f:
+                    report = json.load(f)
+                    report['_source_file'] = file
+                    reports.append(report)
+    except Exception:
+        pass
+    
+    return reports
+
+def load_criterios_auto_gerados():
+    """Carrega critérios auto-gerados baseados na base de dados"""
+    criterios_text = ""
+    criterios_path = os.path.join(os.path.dirname(__file__), '..', 'criterios')
+    
+    if not os.path.exists(criterios_path):
+        return "❌ Critérios ainda não foram gerados. Execute o script gerar_criterios.py"
+    
+    try:
+        criterios_text += "=== CRITÉRIOS AUTO-GERADOS BASEADOS NA SUA BASE DE DADOS ===\n\n"
+        
+        files_found = []
+        for file in os.listdir(criterios_path):
+            if file.endswith('.txt'):
+                files_found.append(file)
+                criterios_text += f"--- {file.upper()} ---\n"
+                with open(os.path.join(criterios_path, file), 'r', encoding='utf-8') as f:
+                    criterios_text += f.read() + "\n\n"
+        
+        if files_found:
+            criterios_text += f"Total de arquivos de critérios carregados: {len(files_found)}\n"
+            criterios_text += f"Arquivos: {', '.join(files_found)}\n\n"
+        else:
+            return "❌ Nenhum arquivo de critério encontrado na pasta criterios/"
+            
+        return criterios_text
+        
+    except Exception as e:
+        return f"❌ Erro ao carregar critérios: {e}"
+
+def analisar_conformidade(pergunta: str = "") -> str:
+    """Analisa conformidade usando critérios auto-gerados da própria base"""
+    reports = load_reports()
+    criterios = load_criterios_auto_gerados()
+    
+    if not reports:
+        return "❌ Nenhum relatório encontrado na pasta data/"
+    
+    if "❌" in criterios:
+        return criterios  # Retorna erro se houver
+    
+    # Contexto especial para critérios auto-gerados
+    context = f"""
+MISSÃO: Analisar conformidade usando CRITÉRIOS AUTO-GERADOS da própria base de dados
+
+DADOS ORIGINAIS DOS SISTEMAS:
+{json.dumps(reports, indent=2, ensure_ascii=False)}
+
+{criterios}
+
+PERGUNTA DO USUÁRIO: {pergunta}
+
+INSTRUÇÕES ESPECIAIS - CRITÉRIOS AUTO-GERADOS:
+1. Os critérios foram extraídos AUTOMATICAMENTE dos próprios dados
+2. Compare valores atuais vs valores ideais/mínimos definidos nos critérios
+3. Identifique onde há conformidade (✅) e não-conformidade (❌)
+4. Use ⚠️ para situações que precisam atenção
+5. Seja específico: "Score atual X% vs mínimo Y% definido no critério"
+6. Priorize por criticidade: CRÍTICA > ALTA > MÉDIA
+7. Para gaps/issues já identificados, sugira ações específicas
+8. Relacione com evidências encontradas nos dados originais
+
+FORMATO DE RESPOSTA ESPERADO:
+🔍 SISTEMA: [nome]
+📊 CRITÉRIOS APLICÁVEIS:
+   ✅/❌/⚠️ [Nome do Critério]: [Valor Atual] vs [Valor Esperado] - [Status]
+   📋 Evidência: [dados que suportam a análise]
+💡 AÇÕES RECOMENDADAS: [baseado nos gaps identificados]
+🎯 PRIORIDADE: [CRÍTICA/ALTA/MÉDIA baseado nos critérios]
+"""
+    
+    return context
+
+root_agent = Agent(
+    name="feito_conferido_auto_agent",
+    model="gemini-2.0-flash",
+    description="Especialista que analisa conformidade usando critérios auto-gerados da própria base de dados",
+    instruction="""Você é o FEITO CONFERIDO com CRITÉRIOS AUTO-GERADOS.
+
+DIFERENCIAL: Os critérios foram extraídos automaticamente da própria base de dados, então você conhece:
+- Valores atuais vs ideais
+- Gaps já identificados
+- Issues específicos encontrados
+- Scores e métricas reais
+
+Use analisar_conformidade para:
+- Comparar dados atuais vs critérios extraídos
+- Identificar melhorias baseadas nos próprios dados
+- Sugerir ações específicas para gaps conhecidos
+- Priorizar por criticidade definida automaticamente
+
+Seja preciso e baseado em evidências dos próprios dados.""",
+    tools=[analisar_conformidade]
+)

@@ -1,0 +1,10 @@
+CRITÉRIOS MOBILE STORAGE
+==================================================
+Gerado automaticamente baseado na análise da base de dados
+
+1. ARMAZENAMENTO SEGURO MOBILE:
+   Status obrigatório: COMPLIANT
+   Status atual: PARTIAL_COMPLIANT
+   Issues encontrados: ⚠️ Alguns dados sensíveis em AsyncStorage sem criptografia
+   Criticidade: CRÍTICA
+

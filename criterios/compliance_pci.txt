@@ -1,0 +1,11 @@
+CRITÉRIOS COMPLIANCE PCI
+==================================================
+Gerado automaticamente baseado na análise da base de dados
+
+1. CONFORMIDADE PCI DSS:
+   Score mínimo: 90%
+   Score atual: 94%
+   Status obrigatório: COMPLIANT
+   Status atual: COMPLIANT
+   Criticidade: CRÍTICA
+

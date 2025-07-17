@@ -1,0 +1,29 @@
+CRITÉRIOS SEGURANÇA MOBILE BANKING
+
+1. ARMAZENAMENTO SEGURO:
+   - Dados sensíveis criptografados
+   - AsyncStorage SEM dados sensíveis
+   - Keychain/Keystore para credenciais
+   - Score mínimo: 90%
+   - Criticidade: CRÍTICA
+
+2. AUTENTICAÇÃO:
+   - Biometria obrigatória
+   - Multi-factor authentication
+   - Device fingerprinting
+   - Score mínimo: 95%
+   - Criticidade: CRÍTICA
+
+3. COMUNICAÇÃO:
+   - Certificate pinning implementado
+   - TLS 1.3 mínimo
+   - Zero conexões HTTP
+   - Score mínimo: 90%
+   - Criticidade: ALTA
+
+4. QUALIDADE CÓDIGO:
+   - Vulnerabilidades: máximo 5
+   - Test coverage: mínimo 75%
+   - Security rating: B ou superior
+   - Score geral: mínimo 80%
+   - Criticidade: MÉDIA
