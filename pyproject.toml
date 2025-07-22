@@ -1,9 +1,10 @@
 [project]
-name = "feitoconferido"
-version = "0.1.0"
+name = "agent_feito-conferido"
+version = "0.2.0"
 description = ""
 authors = [
-    {name = "Your Name", email = "your@email.com"},
+    {name = "Alfredo Tavares", email = "adtr@gft.com"},
+    {name = "Pedro Sales", email = "pral@gft.com"},
 ]
 dependencies = [
     "opentelemetry-exporter-gcp-trace~=1.9.0",
