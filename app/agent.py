@@ -58,7 +58,7 @@ def load_reports():
 def load_criterios():
     """Carrega critérios da pasta criterios com logs de auditoria"""
     criterios_text = ""
-    criterios_path = os.path.join(os.path.dirname(__file__), '..', 'criterios')
+    criterios_path = os.path.join(os.path.dirname(__file__), '..', 'mocks/criterios')
     
     if not os.path.exists(criterios_path):
         audit_logger.log_security_event("file_access", f"Diretório criterios não encontrado: {criterios_path}")

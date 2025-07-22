@@ -13,7 +13,7 @@ class ProcessamentoDadosAgent(BaseAgent):
     def __init__(self):
         super().__init__("processamento_dados", "Agente de Processamento de Dados")
         self.reports_cache: Optional[List[Dict]] = None
-        self.data_path = os.path.join(os.path.dirname(__file__), '..', '..', 'data')
+        self.data_path = os.path.join(os.path.dirname(__file__), '..', '..', 'mocks/data')
         
     async def process_message(self, message: AgentMessage) -> AgentResponse:
         """Processa mensagem recebida"""
