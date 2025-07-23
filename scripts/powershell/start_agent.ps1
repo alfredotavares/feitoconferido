@@ -74,7 +74,7 @@ function Show-Banner {
     Write-Host "    ╔══════════════════════════════════════════╗" -ForegroundColor Cyan
     Write-Host "    ║                                          ║" -ForegroundColor Cyan
     Write-Host "    ║    " -NoNewline -ForegroundColor Cyan
-    Write-Host "🔄  RESTART AGENT SYSTEM  🔄" -NoNewline -ForegroundColor Yellow
+    Write-Host "🔄  START AGENT SYSTEM  🔄" -NoNewline -ForegroundColor Yellow
     Write-Host "         ║" -ForegroundColor Cyan
     Write-Host "    ║                                          ║" -ForegroundColor Cyan
     Write-Host "    ╚══════════════════════════════════════════╝" -ForegroundColor Cyan

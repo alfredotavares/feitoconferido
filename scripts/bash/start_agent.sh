@@ -69,7 +69,7 @@ show_banner() {
     echo
     print_colored "$CYAN" "    ╔══════════════════════════════════════════╗"
     print_colored "$CYAN" "    ║                                          ║"
-    print_colored "$CYAN" "    ║    ${YELLOW}${BOLD}🔄  RESTART AGENT SYSTEM  🔄${NC}${CYAN}         ║"
+    print_colored "$CYAN" "    ║    ${YELLOW}${BOLD}🔄  START AGENT SYSTEM  🔄${NC}${CYAN}         ║"
     print_colored "$CYAN" "    ║                                          ║"
     print_colored "$CYAN" "    ╚══════════════════════════════════════════╝"
     echo
