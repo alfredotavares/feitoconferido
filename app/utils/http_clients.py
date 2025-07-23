@@ -6,6 +6,7 @@ appropriate authentication, timeouts, and retry strategies.
 
 import base64
 from datetime import datetime, timedelta
+import os
 from typing import Optional, Dict, Any
 import httpx
 from tenacity import (
@@ -133,19 +134,17 @@ class JiraClient(BaseHTTPClient):
         """Initializes Jira client with settings from configuration."""
         settings = get_settings().jira
         
-        # Setup Basic Auth
-        auth_string = f"{settings.username}:{settings.api_token}"
-        auth_bytes = auth_string.encode("utf-8")
-        auth_b64 = base64.b64encode(auth_bytes).decode("utf-8")
+        # Setup Bearer Auth
+        jira_access_token = os.getenv("JIRA_ACCESS_TOKEN")
         
         headers = {
-            "Authorization": f"Basic {auth_b64}",
+            "Authorization": f"Bearer {jira_access_token}",
             "Accept": "application/json",
             "Content-Type": "application/json"
         }
         
         super().__init__(
-            base_url=f"{settings.base_url}/rest/api/2",
+            base_url=f"{settings.base_url}",
             timeout=settings.timeout,
             headers=headers
         )

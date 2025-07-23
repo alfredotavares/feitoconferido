@@ -4,6 +4,7 @@ This module manages all configuration settings using pydantic-settings,
 loading values from environment variables with validation.
 """
 
+import os
 from typing import Optional
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -15,9 +16,10 @@ class JiraSettings(BaseSettings):
     Manages connection parameters and authentication for Jira integration.
     """
 
-    base_url: str = Field(..., description="Jira instance base URL")
-    username: str = Field(..., description="Jira username for authentication")
-    api_token: str = Field(..., description="Jira API token")
+    base_url: str = Field(
+        default_factory=lambda: os.getenv("JIRA_BASE_URL", "https://jira.bvnet.bv"),
+        description="Jira instance base URL"
+    )
     timeout: int = Field(default=30, description="Request timeout in seconds")
     
     # Custom fields mapping
