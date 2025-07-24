@@ -5,8 +5,6 @@ production versions and compare with deployment versions.
 """
 
 from typing import Dict, List, Any, Optional
-import re
-from bs4 import BeautifulSoup
 from google.adk.tools import ToolContext
 
 from ..utils.http_clients import get_portal_tech_client
@@ -17,7 +15,7 @@ from ..config.settings import get_settings
 async def get_production_version(component_name: str, tool_context: ToolContext) -> Dict[str, Any]:
     """Retrieves the current production version of a component.
 
-    Queries Portal Tech to find the version currently deployed
+    Queries Portal Tech API to find the version currently deployed
     in production environment.
 
     Args:
@@ -29,8 +27,11 @@ async def get_production_version(component_name: str, tool_context: ToolContext)
             - component: Component name
             - production_version: Version in production (or None if not found)
             - found: Boolean indicating if component was found
-            - source: Where the version was found (API or scraping)
+            - source: Where the version was found (always "api")
             - error: Error message if retrieval failed
+
+    Raises:
+        Exception: When API call fails or authentication is missing.
 
     Example:
         >>> result = await get_production_version("user-service", tool_context)
@@ -44,86 +45,148 @@ async def get_production_version(component_name: str, tool_context: ToolContext)
     """
     settings = get_settings().portal_tech
     
+    if not settings.auth_token:
+        return {
+            "component": component_name,
+            "error": "Authentication token not configured in Portal Tech settings"
+        }
+    
     try:
         client = await get_portal_tech_client()
         
-        # First try API if auth token is available
-        if settings.auth_token:
-            try:
-                response = await client.get(f"/api/v1/components/{component_name}/version")
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    version = data.get("version") or data.get("current_version")
-                    
-                    if version:
-                        # Cache in state
-                        tool_context.state[f"portal_tech_version_{component_name}"] = version
-                        
-                        return {
-                            "component": component_name,
-                            "production_version": version,
-                            "found": True,
-                            "source": "api"
-                        }
-            except:
-                # Fall through to scraping
-                pass
+        headers = {"Authorization": f"Bearer {settings.auth_token}"}
+        response = await client.get(
+            f"/v2/components?relationship=envVersion&name={component_name}",
+            headers=headers
+        )
         
-        # Fallback to web scraping
-        search_url = settings.search_endpoint
-        params = {"q": component_name, "type": "component"}
+        if response.status_code != 200:
+            return {
+                "component": component_name,
+                "error": f"API returned status code {response.status_code}"
+            }
         
-        response = await client.get(search_url, params=params)
-        html_content = response.text
+        data = response.json()
+        component_data = data.get("data", {})
         
-        # Parse HTML
-        soup = BeautifulSoup(html_content, "html.parser")
+        if not component_data:
+            return {
+                "component": component_name,
+                "production_version": None,
+                "found": False,
+                "source": "api"
+            }
         
-        # Try multiple selectors
-        selectors = [
-            f"div[data-component='{component_name}'] .version",
-            f"tr:contains('{component_name}') td.version",
-            f".component-card:contains('{component_name}') .component-version",
-            ".search-result .version-info"
-        ]
+        # Process component data
+        processed_data = _process_component_data(component_data)
+        production_version = processed_data["environment_versions"]["PRD"]
         
-        for selector in selectors:
-            try:
-                elements = soup.select(selector)
-                for element in elements:
-                    # Check if this is the right component
-                    parent = element.find_parent(["div", "tr"])
-                    if parent and component_name.lower() in parent.text.lower():
-                        version_text = element.text.strip()
-                        
-                        # Extract version pattern
-                        version = extract_version_from_string(version_text)
-                        if version:
-                            # Cache in state
-                            tool_context.state[f"portal_tech_version_{component_name}"] = version
-                            
-                            return {
-                                "component": component_name,
-                                "production_version": version,
-                                "found": True,
-                                "source": "scraping"
-                            }
-            except:
-                continue
+        # Cache result in state
+        if production_version:
+            tool_context.state[f"portal_tech_version_{component_name}"] = production_version
         
-        # Component not found in production
         return {
             "component": component_name,
-            "production_version": None,
-            "found": False,
-            "source": "not_found"
+            "production_version": production_version,
+            "found": production_version is not None,
+            "source": "api"
         }
         
     except Exception as e:
         return {
             "component": component_name,
             "error": f"Failed to get production version: {str(e)}"
+        }
+
+
+async def get_component_versions(component_name: str, tool_context: ToolContext) -> Dict[str, Any]:
+    """Retrieves component versions across different environments.
+
+    Queries Portal Tech API to find versions currently deployed
+    in PRD, UAT, and DES environments for the specified component.
+
+    Args:
+        component_name: Name of the component to query.
+        tool_context: ADK tool context for state management.
+
+    Returns:
+        Dictionary containing:
+            - component: Component name
+            - current_prd_version: Version in PRD environment (or None)
+            - current_uat_version: Version in UAT environment (or None)  
+            - current_des_version: Version in DES environment (or None)
+            - found: Boolean indicating if component was found
+            - error: Error message if retrieval failed
+
+    Raises:
+        Exception: When API call fails or authentication is missing.
+
+    Example:
+        >>> result = await get_component_versions("user-service", tool_context)
+        >>> print(result)
+        {
+            "component": "user-service",
+            "current_prd_version": "2.0.5",
+            "current_uat_version": "2.0.6",
+            "current_des_version": "2.1.0-dev",
+            "found": True
+        }
+    """
+    settings = get_settings().portal_tech
+    
+    if not settings.auth_token:
+        return {
+            "component": component_name,
+            "error": "Authentication token not configured in Portal Tech settings"
+        }
+    
+    try:
+        client = await get_portal_tech_client()
+        
+        headers = {"Authorization": f"Bearer {settings.auth_token}"}
+        response = await client.get(
+            f"/v2/components?relationship=envVersion&name={component_name}",
+            headers=headers
+        )
+        
+        if response.status_code != 200:
+            return {
+                "component": component_name,
+                "error": f"API returned status code {response.status_code}"
+            }
+        
+        data = response.json()
+        component_data = data.get("data", {})
+        
+        if not component_data:
+            return {
+                "component": component_name,
+                "current_prd_version": None,
+                "current_uat_version": None,
+                "current_des_version": None,
+                "found": False
+            }
+        
+        # Process component data
+        processed_data = _process_component_data(component_data)
+        versions = processed_data["environment_versions"]
+        
+        # Cache results in state
+        cache_key = f"portal_tech_versions_{component_name}"
+        tool_context.state[cache_key] = versions
+        
+        return {
+            "component": component_name,
+            "current_prd_version": versions["PRD"],
+            "current_uat_version": versions["UAT"],
+            "current_des_version": versions["DES"],
+            "found": True
+        }
+        
+    except Exception as e:
+        return {
+            "component": component_name,
+            "error": f"Failed to get component versions: {str(e)}"
         }
 
 
@@ -335,7 +398,7 @@ async def get_component_details(component_name: str, tool_context: ToolContext) 
     """Retrieves detailed information about a component from Portal Tech.
 
     Fetches comprehensive component information including team ownership,
-    repository, and deployment history.
+    repository, technology stack, and deployment history.
 
     Args:
         component_name: Name of the component.
@@ -344,11 +407,12 @@ async def get_component_details(component_name: str, tool_context: ToolContext) 
     Returns:
         Dictionary containing:
             - component: Component name
-            - version: Current production version
+            - description: Component description
+            - production_version: Current production version
             - team: Team responsible for the component
             - repository: Source code repository URL
-            - last_deployment: Date of last deployment
-            - health_status: Current health status
+            - technology: Technology information
+            - last_deployment: Most recent deployment date
             - portal_url: Direct link to Portal Tech page
             - error: Error message if retrieval failed
 
@@ -357,46 +421,70 @@ async def get_component_details(component_name: str, tool_context: ToolContext) 
         >>> print(result)
         {
             "component": "user-service",
-            "version": "2.0.5",
+            "description": "User management service",
+            "production_version": "2.0.5",
             "team": "User Experience Team",
             "repository": "https://github.com/company/user-service",
+            "technology": {"name": "Java", "version": "17"},
             "last_deployment": "2024-01-10T15:30:00Z",
-            "health_status": "healthy",
             "portal_url": "https://portaltech.bvnet.bv/components/user-service"
         }
     """
     settings = get_settings().portal_tech
     
-    try:
-        # First get basic version info
-        version_info = await get_production_version(component_name, tool_context)
-        
-        if "error" in version_info:
-            return version_info
-        
-        details = {
+    if not settings.auth_token:
+        return {
             "component": component_name,
-            "version": version_info.get("production_version"),
+            "error": "Authentication token not configured in Portal Tech settings"
+        }
+    
+    try:
+        client = await get_portal_tech_client()
+        
+        headers = {"Authorization": f"Bearer {settings.auth_token}"}
+        response = await client.get(
+            f"/v2/components?relationship=envVersion&name={component_name}",
+            headers=headers
+        )
+        
+        if response.status_code != 200:
+            return {
+                "component": component_name,
+                "error": f"API returned status code {response.status_code}"
+            }
+        
+        data = response.json()
+        component_data = data.get("data", {})
+        
+        if not component_data:
+            return {
+                "component": component_name,
+                "error": "Component not found"
+            }
+        
+        # Process component data
+        processed_data = _process_component_data(component_data)
+        
+        # Find production deployment info
+        production_version = processed_data["environment_versions"]["prd"]
+        last_deployment = None
+        
+        for env_version in processed_data["env_versions"]:
+            if env_version.get("environment", "").upper() == "PRD":
+                last_deployment = env_version.get("created")
+                break
+        
+        # Build component details
+        details = {
+            "component": processed_data["name"] or component_name,
+            "description": processed_data["description"],
+            "production_version": production_version,
+            "team": processed_data["team"],
+            "repository": processed_data["repository"],
+            "technology": processed_data["technology"],
+            "last_deployment": last_deployment,
             "portal_url": f"{settings.base_url}/components/{component_name}"
         }
-        
-        # Try to get additional details via API if available
-        if settings.auth_token:
-            try:
-                client = await get_portal_tech_client()
-                response = await client.get(f"/api/v1/components/{component_name}")
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    details.update({
-                        "team": data.get("team", "Unknown"),
-                        "repository": data.get("repository", ""),
-                        "last_deployment": data.get("last_deployment", ""),
-                        "health_status": data.get("health_status", "unknown")
-                    })
-            except:
-                # Additional details not available
-                pass
         
         return details
         
@@ -405,3 +493,90 @@ async def get_component_details(component_name: str, tool_context: ToolContext) 
             "component": component_name,
             "error": f"Failed to get component details: {str(e)}"
         }
+
+
+def _extract_environment_versions(env_versions: List[Dict[str, Any]]) -> Dict[str, Optional[str]]:
+    """Extracts versions for each environment from API response.
+
+    Helper function that processes the envVersions array to extract
+    version information for PRD, UAT, and DES environments.
+
+    Args:
+        env_versions: List of environment version objects from API response.
+
+    Returns:
+        Dictionary mapping environment names to their versions:
+            - prd: Production version or None
+            - uat: UAT version or None  
+            - des: Development version or None
+
+    Example:
+        >>> env_data = [
+        ...     {"environment": "PRD", "version": "1.0.0"},
+        ...     {"environment": "UAT", "version": "1.1.0"}
+        ... ]
+        >>> result = _extract_environment_versions(env_data)
+        >>> print(result)
+        {"prd": "1.0.0", "uat": "1.1.0", "des": None}
+    """
+    versions = {"prd": None, "uat": None, "des": None}
+    
+    for env_version in env_versions:
+        environment = env_version.get("environment", "").upper()
+        version = env_version.get("version")
+        
+        if not version:
+            continue
+            
+        if environment == "PRD":
+            versions["prd"] = version
+        elif environment == "UAT":
+            versions["uat"] = version
+        elif environment == "DES":
+            versions["des"] = version
+    
+    return versions
+
+
+def _process_component_data(component_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Processes component data from Portal Tech API response.
+
+    Helper function that extracts and normalizes component information
+    from the API response structure.
+
+    Args:
+        component_data: Component data object from API response.
+
+    Returns:
+        Dictionary containing processed component information:
+            - name: Component name
+            - description: Component description
+            - team: Team responsible for the component
+            - repository: Source code repository URL
+            - technology: Technology information
+            - env_versions: List of environment versions
+            - environment_versions: Processed environment versions dict
+
+    Example:
+        >>> component_data = {
+        ...     "name": "user-service",
+        ...     "description": "User management service",
+        ...     "team": "Backend Team",
+        ...     "envVersions": [{"environment": "PRD", "version": "1.0.0"}]
+        ... }
+        >>> result = _process_component_data(component_data)
+        >>> print(result["environment_versions"])
+        {"prd": "1.0.0", "uat": None, "des": None}
+    """
+    env_versions = component_data.get("envVersions", [])
+    environment_versions = _extract_environment_versions(env_versions)
+    
+    return {
+        "name": component_data.get("name", ""),
+        "description": component_data.get("description", ""),
+        "team": component_data.get("team", "Unknown"),
+        "repository": component_data.get("repository", ""),
+        "technology": component_data.get("technology", {}),
+        "env_versions": env_versions,
+        "environment_versions": environment_versions
+    }
