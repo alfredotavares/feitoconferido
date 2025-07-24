@@ -23,8 +23,6 @@ The agent implements comprehensive security protocols including input
 validation, data masking, audit logging, and rate limiting.
 """
 
-from typing import List, Optional, Any
-
 from google.adk.agents import Agent
 
 # from app.tools.validation_tools import (
@@ -218,55 +216,17 @@ Aderir aos seguintes padrões arquiteturais:
 
 Sempre responda em português brasileiro, mantendo terminologia técnica quando apropriado."""
 
-    @classmethod
-    def create_root_agent(cls, tools: Optional[List[Any]] = None) -> Agent:
-        """Create and configure the root architectural compliance agent.
-        
-        Args:
-            tools: Optional list of tools to override default tools.
-                  If None, uses default validation tools.
-        
-        Returns:
-            Configured Agent instance ready for architectural validation.
-            
-        Raises:
-            ValueError: If tools list is empty when provided.
-            
-        Example:
-            >>> agent = AgentConfiguration.create_root_agent()
-            >>> result = agent.validate("C-979015")
-        """
-        if tools is not None and len(tools) == 0:
-            raise ValueError("Tools list cannot be empty when provided")
-            
-        # Currently available tools for the agent
-        # Additional tools from the modules (jira_tools, vt_tools, etc.) 
-        # are called internally by validate_feito_conferido
-        default_tools = [
-            validate_feito_conferido,  # Main orchestration tool
-            validate_code_repository   # Repository validation tool
-        ]
-        
-        return Agent(
-            name=cls.AGENT_NAME,
-            model=cls.MODEL_NAME,
-            description="Expert system for architectural compliance validation and technical debt management.",
-            instruction=cls.create_agent_instruction(),
-            tools=tools or default_tools
-        )
+# ============================================================================
+# ROOT AGENT
+# ============================================================================
 
-
-def initialize_feito_conferido_agent() -> Agent:
-    """Initialize the FEITO CONFERIDO agent with default configuration.
-    
-    This function provides a convenient way to create the agent with
-    standard configuration for architectural compliance validation.
-    
-    Returns:
-        Fully configured Agent instance.
-        
-    Example:
-        >>> agent = initialize_feito_conferido_agent()
-        >>> agent.process_request("Analyze approval C-979015")
-    """
-    return AgentConfiguration.create_root_agent()
+root_agent = Agent(
+    name="feito_conferido_agent",
+    model="gemini-2.0-flash", 
+    description="Expert system for architectural compliance validation and technical debt management.",
+    instruction=AgentConfiguration.create_agent_instruction(),
+    tools=[
+        validate_feito_conferido,  # Tool principal de orquestração
+        validate_code_repository   # Tool de validação de repositório
+    ]
+)
