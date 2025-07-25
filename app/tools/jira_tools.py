@@ -25,11 +25,17 @@ async def get_jira_ticket(ticket_id: str, tool_context: ToolContext) -> Dict[str
     Returns:
         Dictionary containing ticket information:
             - ticket_id: The ticket ID
+            - ticket_key: The ticket key from Jira
             - summary: Ticket summary/title
+            - description: Ticket description
             - status: Current ticket status
+            - status_category: Status category name
+            - assignee: Assigned user display name
+            - reporter: Reporter user display name
+            - priority: Priority name if available
             - components: List of component names
             - development_cycle: Development cycle information
-            - description: PDI description
+            - pdi_description: PDI description from custom field
             - arqcor_id: Associated ARQCOR ID if any
             - error: Error message if retrieval failed
 
@@ -37,12 +43,15 @@ async def get_jira_ticket(ticket_id: str, tool_context: ToolContext) -> Dict[str
         >>> result = await get_jira_ticket("PDI-12345", tool_context)
         >>> print(result)
         {
-            "ticket_id": "PDI-12345",
+            "ticket_id": "10001",
+            "ticket_key": "PDI-12345",
             "summary": "Deploy new user service",
             "status": "In Progress",
+            "status_category": "In Progress",
+            "assignee": "João Silva",
             "components": ["user-service", "auth-module"],
             "development_cycle": "Sprint 23",
-            "description": "Deploy user-service and auth-module...",
+            "pdi_description": "Deploy user-service and auth-module...",
             "arqcor_id": "ARQCOR-123"
         }
     """
@@ -53,16 +62,39 @@ async def get_jira_ticket(ticket_id: str, tool_context: ToolContext) -> Dict[str
         
         # Build URL with required fields
         params = {
-            "fields": f"summary,status,{settings.components_field},"
-                     f"{settings.description_field},{settings.arqcor_field},"
-                     f"customfield_10101",  # Development cycle field
+            "fields": f"summary,description,assignee,reporter,priority,status,"
+                     f"{settings.components_field},{settings.description_field},"
+                     f"{settings.arqcor_field},customfield_10101",  # Development cycle field
             "expand": "renderedFields"
         }
         
-        response = await client.get(f"/issue/{ticket_id}", params=params)
+        response = await client.get(f"/rest/api/2/issue/{ticket_id}", params=params)
         data = response.json()
         
+        # Extract main ticket data
+        ticket_id_internal = data.get("id", "")
+        ticket_key = data.get("key", "")
         fields = data.get("fields", {})
+        
+        # Extract basic fields
+        summary = fields.get("summary", "")
+        description = fields.get("description", "")
+        
+        # Extract status information
+        status_obj = fields.get("status", {})
+        status = status_obj.get("name", "Unknown")
+        status_category = status_obj.get("statusCategory", {}).get("name", "Unknown")
+        
+        # Extract assignee and reporter
+        assignee_obj = fields.get("assignee")
+        assignee = assignee_obj.get("displayName", "") if assignee_obj else ""
+        
+        reporter_obj = fields.get("reporter")
+        reporter = reporter_obj.get("displayName", "") if reporter_obj else ""
+        
+        # Extract priority
+        priority_obj = fields.get("priority")
+        priority = priority_obj.get("name", "") if priority_obj else ""
         
         # Extract components
         components_raw = fields.get(settings.components_field, [])
@@ -72,21 +104,32 @@ async def get_jira_ticket(ticket_id: str, tool_context: ToolContext) -> Dict[str
         cycle_raw = fields.get("customfield_10101", "")
         development_cycle = parse_development_cycle(cycle_raw)
         
+        # Extract custom fields
+        pdi_description = fields.get(settings.description_field, "")
+        arqcor_id = fields.get(settings.arqcor_field, "")
+        
         # Store ticket info in context state for later use
-        tool_context.state[f"jira_ticket_{ticket_id}"] = {
-            "summary": fields.get("summary", ""),
+        tool_context.state[f"jira_ticket_{ticket_key}"] = {
+            "summary": summary,
             "components": components,
-            "development_cycle": development_cycle
+            "development_cycle": development_cycle,
+            "status": status
         }
         
         return {
-            "ticket_id": ticket_id,
-            "summary": fields.get("summary", ""),
-            "status": fields.get("status", {}).get("name", "Unknown"),
+            "ticket_id": ticket_id_internal,
+            "ticket_key": ticket_key,
+            "summary": summary,
+            "description": description,
+            "status": status,
+            "status_category": status_category,
+            "assignee": assignee,
+            "reporter": reporter,
+            "priority": priority,
             "components": components,
             "development_cycle": development_cycle,
-            "description": fields.get(settings.description_field, ""),
-            "arqcor_id": fields.get(settings.arqcor_field, "")
+            "pdi_description": pdi_description,
+            "arqcor_id": arqcor_id
         }
         
     except Exception as e:
@@ -183,19 +226,20 @@ async def validate_pdi_components(ticket_id: str, tool_context: ToolContext) -> 
             return ticket_info
         
         components = ticket_info.get("components", [])
-        description = ticket_info.get("description", "").lower()
+        pdi_description = ticket_info.get("pdi_description", "").lower()
         status = ticket_info.get("status", "")
+        status_category = ticket_info.get("status_category", "")
         
         warnings = []
         components_not_in_description = []
         
         # Check if status is Done or Concluído
-        if status.lower() in ["done", "concluído"]:
+        if status.lower() in ["done", "concluído"] or status_category.lower() == "done":
             warnings.append(f"PDI has status '{status}' - cannot proceed with completed PDI")
         
         # Check if all components are mentioned in description
         for component in components:
-            if component.lower() not in description:
+            if component.lower() not in pdi_description:
                 components_not_in_description.append(component)
                 warnings.append(f"Component '{component}' not mentioned in PDI description")
         
@@ -237,7 +281,9 @@ async def get_arqcor_ticket(arqcor_id: str, tool_context: ToolContext) -> Dict[s
     Returns:
         Dictionary containing:
             - arqcor_id: The ARQCOR ID
+            - ticket_key: The ticket key from Jira
             - status: ARQCOR ticket status
+            - status_category: Status category name
             - jt_field: Value of JT field
             - is_valid: Boolean indicating if ARQCOR is valid for processing
             - error: Error message if retrieval failed
@@ -246,8 +292,10 @@ async def get_arqcor_ticket(arqcor_id: str, tool_context: ToolContext) -> Dict[s
         >>> result = await get_arqcor_ticket("ARQCOR-123", tool_context)
         >>> print(result)
         {
-            "arqcor_id": "ARQCOR-123",
+            "arqcor_id": "10002",
+            "ticket_key": "ARQCOR-123",
             "status": "Open",
+            "status_category": "To Do",
             "jt_field": "JT-147338",
             "is_valid": True
         }
@@ -261,23 +309,34 @@ async def get_arqcor_ticket(arqcor_id: str, tool_context: ToolContext) -> Dict[s
             "fields": f"summary,status,{settings.jt_field}",
         }
         
-        response = await client.get(f"/issue/{arqcor_id}", params=params)
+        response = await client.get(f"/rest/api/2/issue/{arqcor_id}", params=params)
         data = response.json()
         
+        # Extract main ticket data
+        ticket_id_internal = data.get("id", "")
+        ticket_key = data.get("key", "")
         fields = data.get("fields", {})
-        status = fields.get("status", {}).get("name", "Unknown")
+        
+        # Extract status information
+        status_obj = fields.get("status", {})
+        status = status_obj.get("name", "Unknown")
+        status_category = status_obj.get("statusCategory", {}).get("name", "Unknown")
+        
+        # Extract JT field
         jt_field = fields.get(settings.jt_field, "")
         
         # Validate ARQCOR
         is_valid = True
         if not jt_field:
             is_valid = False
-        if status.lower() in ["rejected", "rejeitado"]:
+        if status.lower() in ["rejected", "rejeitado"] or status_category.lower() == "done":
             is_valid = False
         
         return {
-            "arqcor_id": arqcor_id,
+            "arqcor_id": ticket_id_internal,
+            "ticket_key": ticket_key,
             "status": status,
+            "status_category": status_category,
             "jt_field": jt_field,
             "is_valid": is_valid
         }
@@ -320,7 +379,7 @@ async def update_ticket_comment(ticket_id: str, comment: str, tool_context: Tool
         
         data = {"body": comment}
         
-        await client.post(f"/issue/{ticket_id}/comment", json=data)
+        await client.post(f"/rest/api/2/issue/{ticket_id}/comment", json=data)
         
         return {
             "ticket_id": ticket_id,
@@ -333,3 +392,66 @@ async def update_ticket_comment(ticket_id: str, comment: str, tool_context: Tool
             "success": False,
             "error": f"Failed to add comment: {str(e)}"
         }
+
+    """Processes Jira ticket data from API response.
+
+    Helper function that extracts and normalizes ticket information
+    from the Jira API response structure.
+
+    Args:
+        data: Ticket data object from Jira API response.
+
+    Returns:
+        Dictionary containing processed ticket information:
+            - ticket_id: Internal ticket ID
+            - ticket_key: Ticket key (e.g., PDI-12345)
+            - summary: Ticket summary
+            - description: Ticket description
+            - status: Status name
+            - status_category: Status category
+            - assignee: Assignee display name
+            - reporter: Reporter display name
+            - priority: Priority name
+
+    Example:
+        >>> jira_data = {
+        ...     "id": "10001",
+        ...     "key": "PDI-12345",
+        ...     "fields": {
+        ...         "summary": "Deploy service",
+        ...         "status": {"name": "In Progress", "statusCategory": {"name": "In Progress"}}
+        ...     }
+        ... }
+        >>> result = _process_jira_ticket_data(jira_data)
+        >>> print(result["ticket_key"])
+        "PDI-12345"
+    """
+    fields = data.get("fields", {})
+    
+    # Extract status information
+    status_obj = fields.get("status", {})
+    status = status_obj.get("name", "Unknown")
+    status_category = status_obj.get("statusCategory", {}).get("name", "Unknown")
+    
+    # Extract assignee and reporter
+    assignee_obj = fields.get("assignee")
+    assignee = assignee_obj.get("displayName", "") if assignee_obj else ""
+    
+    reporter_obj = fields.get("reporter")
+    reporter = reporter_obj.get("displayName", "") if reporter_obj else ""
+    
+    # Extract priority
+    priority_obj = fields.get("priority")
+    priority = priority_obj.get("name", "") if priority_obj else ""
+    
+    return {
+        "ticket_id": data.get("id", ""),
+        "ticket_key": data.get("key", ""),
+        "summary": fields.get("summary", ""),
+        "description": fields.get("description", ""),
+        "status": status,
+        "status_category": status_category,
+        "assignee": assignee,
+        "reporter": reporter,
+        "priority": priority
+    }
