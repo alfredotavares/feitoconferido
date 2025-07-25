@@ -53,35 +53,53 @@ def format_validation_result(
 
 # MOCK: Get Jira ticket
 async def get_jira_ticket(ticket_id: str, tool_context: ToolContext) -> Dict[str, Any]:
-    """MOCKED: Returns mock Jira ticket data."""
+    """MOCKED: Returns mock Jira ticket data matching real API structure."""
     # Simulate different scenarios based on ticket ID
     if "ERROR" in ticket_id:
-        return {"error": "Failed to fetch Jira ticket: Connection timeout"}
+        return {
+            "ticket_id": ticket_id,
+            "error": "Failed to fetch Jira ticket: Connection timeout"
+        }
     
     if ticket_id == "PDI-99999":
         # Mock ticket with no components
         return {
-            "ticket_id": ticket_id,
+            "ticket_id": "10099999",
+            "ticket_key": "PDI-99999",
             "summary": "Deploy empty service",
+            "description": "Deploy service without components for testing",
             "status": "In Progress",
+            "status_category": "In Progress",
+            "assignee": "Maria Santos",
+            "reporter": "João Silva",
+            "priority": "High",
             "components": [],
             "development_cycle": "Sprint 23",
-            "description": "Deploy service without components",
+            "pdi_description": "Deploy service without components",
             "arqcor_id": ""
         }
     
-    # Default mock response
+    # Default mock response with full structure
     mock_components = ["user-service", "auth-module", "notification-service"]
     if "GATEWAY" in ticket_id:
         mock_components.append("api-gateway")
     
+    # Generate internal ID from ticket ID
+    internal_id = f"100{ticket_id.split('-')[1]}"
+    
     return {
-        "ticket_id": ticket_id,
+        "ticket_id": internal_id,
+        "ticket_key": ticket_id,
         "summary": f"Deploy new services for {ticket_id}",
+        "description": f"This is a mock ticket for deploying {', '.join(mock_components)} to production environment.",
         "status": "In Progress",
+        "status_category": "In Progress",
+        "assignee": "João Silva",
+        "reporter": "Ana Costa",
+        "priority": "Medium",
         "components": mock_components,
         "development_cycle": "Sprint 23",
-        "description": f"Deploy {', '.join(mock_components)} to production environment",
+        "pdi_description": f"Deploy {', '.join(mock_components)} to production environment",
         "arqcor_id": "ARQCOR-123"
     }
 
@@ -191,14 +209,20 @@ async def check_multiple_component_versions(
     components: List[Dict[str, str]],
     tool_context: ToolContext
 ) -> Dict[str, Any]:
-    """MOCKED: Returns mock version check result."""
+    """MOCKED: Returns mock version check result matching real API structure."""
     version_changes = []
     new_components = []
     major_changes = []
+    components_with_errors = []
     
     for comp in components:
         name = comp["name"]
         version = comp["version"]
+        
+        # Simulate error for specific component names
+        if "error" in name.lower():
+            components_with_errors.append(name)
+            continue
         
         # Simulate different scenarios
         if "new" in name.lower():
@@ -212,16 +236,50 @@ async def check_multiple_component_versions(
             major_changes.append(name)
             version_changes.append({
                 "component": name,
-                "change": "1.5.0 → 2.0.0",
+                "change": f"1.5.0 → {version}",
                 "type": "MAJOR"
             })
         else:
             # Simulate minor version change
+            old_version = "1.0.0"
+            if version.startswith("1.0."):
+                change_type = "PATCH"
+            elif version.startswith("1."):
+                change_type = "MINOR"
+            else:
+                change_type = "MAJOR"
+                major_changes.append(name)
+            
             version_changes.append({
                 "component": name,
-                "change": "1.0.0 → 1.1.0",
-                "type": "MINOR"
+                "change": f"{old_version} → {version}",
+                "type": change_type
             })
+    
+    # Build summary
+    total = len(components)
+    new_count = len(new_components)
+    major_count = len(major_changes)
+    error_count = len(components_with_errors)
+    minor_count = len([vc for vc in version_changes if vc["type"] == "MINOR"])
+    patch_count = len([vc for vc in version_changes if vc["type"] == "PATCH"])
+    
+    summary_parts = [f"{total} components"]
+    details = []
+    if new_count > 0:
+        details.append(f"{new_count} new")
+    if major_count > 0:
+        details.append(f"{major_count} major updates")
+    if minor_count > 0:
+        details.append(f"{minor_count} minor updates")
+    if patch_count > 0:
+        details.append(f"{patch_count} patch updates")
+    if error_count > 0:
+        details.append(f"{error_count} errors")
+    
+    summary = summary_parts[0]
+    if details:
+        summary += ": " + ", ".join(details)
     
     # Store in context
     tool_context.state["version_check_results"] = {
@@ -231,12 +289,12 @@ async def check_multiple_component_versions(
     }
     
     return {
-        "total_components": len(components),
+        "total_components": total,
         "version_changes": version_changes,
         "new_components": new_components,
         "major_changes": major_changes,
-        "components_with_errors": [],
-        "summary": f"{len(components)} components: {len(new_components)} new, {len(major_changes)} major updates"
+        "components_with_errors": components_with_errors,
+        "summary": summary
     }
 
 
@@ -291,7 +349,7 @@ async def validate_feito_conferido(
     Orchestrates all four validation stages:
     1. Component validation against VT
     2. ARQCOR form creation
-    3. Version checking with Component (Portal Tech)
+    3. Version checking with Portal Tech
     4. Code/contract validation
 
     Args:
@@ -325,7 +383,7 @@ async def validate_feito_conferido(
     
     # Initialize validation tracking
     tool_context.state[f"validation_{ticket_id}"] = {
-        "started_at": "now",
+        "started_at": datetime.utcnow().isoformat(),
         "evaluator": evaluator_name
     }
     
@@ -441,7 +499,7 @@ async def validate_feito_conferido(
     
     # Stage 3: Version Check
     try:
-        # Prepare components with versions
+        # Prepare components with versions (MOCK: simulate versions)
         components_with_versions = []
         for comp_name in components:
             # MOCK: Add some variety to versions
@@ -449,6 +507,12 @@ async def validate_feito_conferido(
                 version = "1.0.0"
             elif "major" in comp_name.lower():
                 version = "2.0.0"
+            elif comp_name == "api-gateway":
+                version = "3.2.1"
+            elif comp_name == "notification-service":
+                version = "1.5.3"
+            elif comp_name == "auth-module":
+                version = "1.2.8"
             else:
                 version = "1.1.0"
             
