@@ -10,7 +10,7 @@ from google.adk.tools import ToolContext
 from ..utils.formatters import format_validation_result
 from .jira_tools import get_jira_ticket, validate_pdi_components
 from .vt_tools import validate_components_in_vt
-from .portal_tech_tools import check_multiple_component_versions
+from .component_tools import check_multiple_component_versions
 from .arqcor_tools import (
     create_arqcor_form, 
     update_arqcor_form_with_versions,
@@ -28,7 +28,7 @@ async def validate_feito_conferido(
     Orchestrates all four validation stages:
     1. Component validation against VT
     2. ARQCOR form creation
-    3. Version checking with Portal Tech
+    3. Version checking with Component (Portal Tech)
     4. Code/contract validation
 
     Args:

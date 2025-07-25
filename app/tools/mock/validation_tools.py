@@ -291,7 +291,7 @@ async def validate_feito_conferido(
     Orchestrates all four validation stages:
     1. Component validation against VT
     2. ARQCOR form creation
-    3. Version checking with Portal Tech
+    3. Version checking with Component (Portal Tech)
     4. Code/contract validation
 
     Args:

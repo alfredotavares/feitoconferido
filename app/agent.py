@@ -13,7 +13,7 @@ The FEITO CONFERIDO agent performs a 4-stage validation process:
    in the ARQCOR system to document the validation process.
 
 3. **Version Checking**: Compares deployment versions with production
-   versions using Portal Tech to identify major changes or new components.
+   versions using Component (Portal Tech) to identify major changes or new components.
 
 4. **Code/Contract Validation**: Validates repository structure, dependencies,
    and OpenAPI contracts. Identifies manual actions needed for API Gateway
@@ -138,7 +138,7 @@ Utilize as seguintes ferramentas para operações específicas:
    - Executa 4 estágios de validação:
      1. Validação de componentes contra VT
      2. Criação de formulário ARQCOR
-     3. Verificação de versões com Portal Tech
+     3. Verificação de versões com Component (Portal Tech)
      4. Validação de código/contrato
 
 2. **validate_code_repository**: Validador de repositório de código fonte

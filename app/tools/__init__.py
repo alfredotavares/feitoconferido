@@ -22,8 +22,8 @@ from .vt_tools import (
     get_openapi_contract
 )
 
-# Portal Tech tools
-from .portal_tech_tools import (
+# Component (Portal Tech) tools
+from .component_tools import (
     get_production_version,
     compare_component_versions,
     check_multiple_component_versions,
@@ -58,7 +58,7 @@ __all__ = [
     "get_blizzdesign_export",
     "parse_blizzdesign_data",
     "get_openapi_contract",
-    # Portal Tech tools
+    # Component (Portal Tech) tools
     "get_production_version",
     "compare_component_versions",
     "check_multiple_component_versions",

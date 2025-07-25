@@ -307,7 +307,7 @@ def get_vt_auth_headers() -> Dict[str, str]:
 
 
 def get_portal_tech_auth_headers() -> Dict[str, str]:
-    """Gets authentication headers for Portal Tech API.
+    """Gets authentication headers for Component (Portal Tech) API.
 
     Returns:
         Dictionary with Authorization header if token is configured.

@@ -72,14 +72,14 @@ class VTSettings(BaseSettings):
 
 
 class PortalTechSettings(BaseSettings):
-    """Portal Tech configuration for version checking.
+    """Component (Portal Tech) configuration for version checking.
 
-    Manages connection to Portal Tech for production version queries.
+    Manages connection to Component (Portal Tech) for production version queries.
     """
 
     base_url: str = Field(
         default="https://portaltech.bvnet.bv",
-        description="Portal Tech base URL"
+        description="Component (Portal Tech) base URL"
     )
     auth_token: Optional[str] = Field(
         default=None,

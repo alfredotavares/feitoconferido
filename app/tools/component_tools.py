@@ -1,6 +1,6 @@
-"""Portal Tech integration tools for Feito/Conferido agent.
+"""Component (Portal Tech) integration tools for Feito/Conferido agent.
 
-Provides tools for interacting with Portal Tech to check
+Provides tools for interacting with Component (Portal Tech) to check
 production versions and compare with deployment versions.
 """
 
@@ -15,7 +15,7 @@ from ..config.settings import get_settings
 async def get_production_version(component_name: str, tool_context: ToolContext) -> Dict[str, Any]:
     """Retrieves the current production version of a component.
 
-    Queries Portal Tech API to find the version currently deployed
+    Queries Component (Portal Tech) API to find the version currently deployed
     in production environment.
 
     Args:
@@ -48,7 +48,7 @@ async def get_production_version(component_name: str, tool_context: ToolContext)
     if not settings.auth_token:
         return {
             "component": component_name,
-            "error": "Authentication token not configured in Portal Tech settings"
+            "error": "Authentication token not configured in Component (Portal Tech) settings"
         }
     
     try:
@@ -102,7 +102,7 @@ async def get_production_version(component_name: str, tool_context: ToolContext)
 async def get_component_versions(component_name: str, tool_context: ToolContext) -> Dict[str, Any]:
     """Retrieves component versions across different environments.
 
-    Queries Portal Tech API to find versions currently deployed
+    Queries Component (Portal Tech) API to find versions currently deployed
     in PRD, UAT, and DES environments for the specified component.
 
     Args:
@@ -137,7 +137,7 @@ async def get_component_versions(component_name: str, tool_context: ToolContext)
     if not settings.auth_token:
         return {
             "component": component_name,
-            "error": "Authentication token not configured in Portal Tech settings"
+            "error": "Authentication token not configured in Component (Portal Tech) settings"
         }
     
     try:
@@ -395,7 +395,7 @@ async def check_multiple_component_versions(
 
 
 async def get_component_details(component_name: str, tool_context: ToolContext) -> Dict[str, Any]:
-    """Retrieves detailed information about a component from Portal Tech.
+    """Retrieves detailed information about a component from Component (Portal Tech).
 
     Fetches comprehensive component information including team ownership,
     repository, technology stack, and deployment history.
@@ -413,7 +413,7 @@ async def get_component_details(component_name: str, tool_context: ToolContext) 
             - repository: Source code repository URL
             - technology: Technology information
             - last_deployment: Most recent deployment date
-            - portal_url: Direct link to Portal Tech page
+            - portal_url: Direct link to Component (Portal Tech) page
             - error: Error message if retrieval failed
 
     Example:
@@ -435,7 +435,7 @@ async def get_component_details(component_name: str, tool_context: ToolContext) 
     if not settings.auth_token:
         return {
             "component": component_name,
-            "error": "Authentication token not configured in Portal Tech settings"
+            "error": "Authentication token not configured in Component (Portal Tech) settings"
         }
     
     try:
@@ -539,7 +539,7 @@ def _extract_environment_versions(env_versions: List[Dict[str, Any]]) -> Dict[st
 
 
 def _process_component_data(component_data: Dict[str, Any]) -> Dict[str, Any]:
-    """Processes component data from Portal Tech API response.
+    """Processes component data from Component (Portal Tech) API response.
 
     Helper function that extracts and normalizes component information
     from the API response structure.

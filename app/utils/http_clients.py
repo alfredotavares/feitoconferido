@@ -174,13 +174,13 @@ class VTClient(BaseHTTPClient):
 
 
 class PortalTechClient(BaseHTTPClient):
-    """HTTP client configured for Portal Tech access.
+    """HTTP client configured for Component (Portal Tech) access.
 
     Handles both API access (with token) and web scraping fallback.
     """
 
     def __init__(self):
-        """Initializes Portal Tech client with settings from configuration."""
+        """Initializes Component (Portal Tech) client with settings from configuration."""
         settings = get_settings().portal_tech
         
         headers = {
@@ -302,7 +302,7 @@ async def get_vt_client() -> VTClient:
 
 
 async def get_portal_tech_client() -> PortalTechClient:
-    """Gets or creates Portal Tech client singleton.
+    """Gets or creates Component (Portal Tech) client singleton.
 
     Returns:
         Configured PortalTechClient instance.
