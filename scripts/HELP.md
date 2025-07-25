@@ -135,7 +135,8 @@ chmod +x script_original.sh
 ```bash
 # Problema comum com start_agent.sh
 sudo apt-get update && sudo apt-get install -y dos2unix
-dos2unix ./scripts/bash/start_agent.sh
+dos2unix ./scripts/bash/start_agent.sh (ou tr -d '\r' < ./scripts/bash/start_agent.sh > ./scripts/bash/start_agent_fixed.sh)
+mv ./scripts/bash/start_agent_fixed.sh ./scripts/bash/start_agent.sh
 chmod +x ./scripts/bash/start_agent.sh
 
 # Executar
