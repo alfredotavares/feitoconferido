@@ -16,6 +16,17 @@ from .arqcor_tools import (
     update_arqcor_form_with_versions,
     add_validation_checklist_to_form
 )
+from .git_tools import (
+    clone_repository,
+    analyze_project_structure,
+    validate_dependencies,
+    find_openapi_spec,
+    cleanup_repository
+)
+from .bitbucket_tools import (
+    get_repository_info,
+    list_repository_tags
+)
 
 
 async def validate_feito_conferido(
@@ -37,157 +48,141 @@ async def validate_feito_conferido(
         tool_context: ADK tool context for state management.
 
     Returns:
-        Dictionary containing:
-            - ticket_id: The validated ticket
-            - overall_status: APPROVED, FAILED, or REQUIRES_MANUAL_ACTION
-            - stages_completed: List of completed stages
-            - errors: List of validation errors
-            - warnings: List of validation warnings
-            - manual_actions: List of required manual actions
-            - arqcor_form_id: Generated ARQCOR form ID
+        Dictionary containing validation results with:
+            - ticket_id: Validated ticket ID
+            - overall_status: APPROVED, APPROVED_WITH_WARNINGS, or REJECTED
+            - stages_completed: List of completed validation stages
+            - errors: List of critical errors found
+            - warnings: List of non-critical issues
+            - manual_actions: List of required manual verifications
+            - arqcor_form_id: Generated form ID (if created)
             - summary: Human-readable validation summary
 
     Example:
-        >>> result = await validate_feito_conferido("PDI-12345", "João Silva", tool_context)
+        >>> result = await validate_feito_conferido(
+        ...     "PDI-12345",
+        ...     "John Doe",
+        ...     tool_context
+        ... )
         >>> print(result["overall_status"])
-        "APPROVED"
-        >>> print(result["summary"])
-        "✅ Status: APPROVED\n\n✅ All 4 validation stages completed successfully"
+        "APPROVED_WITH_WARNINGS"
     """
-    stages_completed = []
     errors = []
     warnings = []
     manual_actions = []
+    stages_completed = []
     overall_status = "APPROVED"
+    arqcor_form_id = None
     
-    # Initialize validation tracking
-    tool_context.state[f"validation_{ticket_id}"] = {
-        "started_at": "now",
-        "evaluator": evaluator_name
-    }
-    
-    # Stage 1: Ticket and Component Validation
+    # Stage 1: Fetch ticket and validate components
     try:
-        # Get ticket information
-        ticket_info = await get_jira_ticket(ticket_id, tool_context)
+        # Get ticket details
+        ticket_data = await get_jira_ticket(ticket_id, tool_context)
         
-        if "error" in ticket_info:
-            errors.append(f"Stage 1: {ticket_info['error']}")
-            overall_status = "FAILED"
-            return _build_validation_response(
+        if "error" in ticket_data:
+            errors.append(f"Stage 1: Failed to fetch ticket - {ticket_data['error']}")
+            overall_status = "REJECTED"
+            return _format_validation_response(
                 ticket_id, overall_status, stages_completed, 
-                errors, warnings, manual_actions
+                errors, warnings, manual_actions, arqcor_form_id
             )
         
-        # Validate PDI components if it's a PDI ticket
-        if ticket_id.startswith("PDI-"):
-            pdi_validation = await validate_pdi_components(ticket_id, tool_context)
-            
-            if not pdi_validation.get("is_valid", False):
-                warnings.extend(pdi_validation.get("warnings", []))
-                
-                # Check for critical errors
-                if any("status" in w and ("done" in w.lower() or "concluído" in w.lower()) 
-                      for w in pdi_validation.get("warnings", [])):
-                    errors.append("Stage 1: PDI has completed status - cannot proceed")
-                    overall_status = "FAILED"
-                    return _build_validation_response(
-                        ticket_id, overall_status, stages_completed,
-                        errors, warnings, manual_actions
-                    )
-        
-        # Validate components against VT
-        components = ticket_info.get("components", [])
-        
+        # Extract components
+        components = ticket_data.get("components", [])
         if not components:
             errors.append("Stage 1: No components found in ticket")
-            overall_status = "FAILED"
-            return _build_validation_response(
+            overall_status = "REJECTED"
+            return _format_validation_response(
                 ticket_id, overall_status, stages_completed,
-                errors, warnings, manual_actions
+                errors, warnings, manual_actions, arqcor_form_id
             )
         
+        # Validate components in VT
         vt_validation = await validate_components_in_vt(ticket_id, components, tool_context)
-        
+
         if "error" in vt_validation:
-            errors.append(f"Stage 1: {vt_validation['error']}")
-            overall_status = "FAILED"
-            return _build_validation_response(
+            errors.append(f"Stage 1: VT validation failed - {vt_validation['error']}")
+            overall_status = "REJECTED"
+            return _format_validation_response(
                 ticket_id, overall_status, stages_completed,
-                errors, warnings, manual_actions
+                errors, warnings, manual_actions, arqcor_form_id
             )
         
-        if not vt_validation.get("is_valid", False):
-            unapproved = vt_validation.get("unapproved_components", [])
+        # Check for non-approved components
+        non_approved = vt_validation.get("non_approved_components", [])
+        if non_approved:
             errors.append(
-                f"Stage 1: Components not approved in VT: {', '.join(unapproved)}"
+                f"Stage 1: Components not approved in VT: {', '.join(non_approved)}"
             )
-            overall_status = "FAILED"
-            return _build_validation_response(
+            overall_status = "REJECTED"
+            return _format_validation_response(
                 ticket_id, overall_status, stages_completed,
-                errors, warnings, manual_actions
+                errors, warnings, manual_actions, arqcor_form_id
             )
+        
+        # Check for validation issues
+        validation_issues = vt_validation.get("validation_issues", [])
+        for issue in validation_issues:
+            warnings.append(f"Stage 1: {issue}")
+            if overall_status == "APPROVED":
+                overall_status = "APPROVED_WITH_WARNINGS"
         
         stages_completed.append("Component Validation")
         
     except Exception as e:
         errors.append(f"Stage 1: Unexpected error - {str(e)}")
-        overall_status = "FAILED"
-        return _build_validation_response(
+        overall_status = "REJECTED"
+        return _format_validation_response(
             ticket_id, overall_status, stages_completed,
-            errors, warnings, manual_actions
+            errors, warnings, manual_actions, arqcor_form_id
         )
     
-    # Stage 2: ARQCOR Form Creation
+    # Stage 2: Create ARQCOR form
     try:
-        arqcor_result = await create_arqcor_form(ticket_id, evaluator_name, tool_context)
-        
-        if "error" in arqcor_result:
-            errors.append(f"Stage 2: {arqcor_result['error']}")
-            overall_status = "FAILED"
-            return _build_validation_response(
-                ticket_id, overall_status, stages_completed,
-                errors, warnings, manual_actions
-            )
-        
-        arqcor_form_id = arqcor_result.get("form_id")
-        stages_completed.append("ARQCOR Form Creation")
-        
-    except Exception as e:
-        errors.append(f"Stage 2: Unexpected error - {str(e)}")
-        overall_status = "FAILED"
-        return _build_validation_response(
-            ticket_id, overall_status, stages_completed,
-            errors, warnings, manual_actions
-        )
-    
-    # Stage 3: Version Check
-    try:
-        # Prepare components with versions (assuming version 1.0.0 for new components)
-        components_with_versions = []
-        for comp_name in components:
-            # In a real scenario, we would get versions from the ticket or another source
-            components_with_versions.append({
-                "name": comp_name,
-                "version": "1.0.0"  # Default version, should be extracted from ticket
-            })
-        
-        version_check = await check_multiple_component_versions(
-            components_with_versions, 
+        arqcor_data = await create_arqcor_form(
+            ticket_id,
+            evaluator_name,
             tool_context
         )
         
+        if "error" in arqcor_data:
+            warnings.append(f"Stage 2: Failed to create ARQCOR form - {arqcor_data['error']}")
+            manual_actions.append("Manually create ARQCOR form for this validation")
+            if overall_status == "APPROVED":
+                overall_status = "APPROVED_WITH_WARNINGS"
+        else:
+            arqcor_form_id = arqcor_data.get("form_id")
+            if not arqcor_form_id:
+                warnings.append("Stage 2: ARQCOR form created but ID not returned")
+                manual_actions.append("Verify ARQCOR form creation in the system")
+                if overall_status == "APPROVED":
+                    overall_status = "APPROVED_WITH_WARNINGS"
+        
+        stages_completed.append("ARQCOR Form Creation")
+        
+    except Exception as e:
+        warnings.append(f"Stage 2: Unexpected error - {str(e)}")
+        manual_actions.append("Manually create ARQCOR form")
+        if overall_status == "APPROVED":
+            overall_status = "APPROVED_WITH_WARNINGS"
+    
+    # Stage 3: Version checking
+    try:
+        version_check = await check_multiple_component_versions(components, tool_context)
+        
         if "error" in version_check:
-            warnings.append(f"Stage 3: {version_check['error']}")
+            warnings.append(f"Stage 3: Version check failed - {version_check['error']}")
+            manual_actions.append("Manually verify component versions in production")
         else:
             # Update ARQCOR form with version info
-            update_result = await update_arqcor_form_with_versions(
-                arqcor_form_id, # type: ignore
-                tool_context
-            )
-            
-            if "error" in update_result:
-                warnings.append(f"Stage 3: Failed to update ARQCOR - {update_result['error']}")
+            if arqcor_form_id:
+                update_result = await update_arqcor_form_with_versions(
+                    arqcor_form_id,
+                    tool_context
+                )
+                
+                if "error" in update_result:
+                    warnings.append(f"Stage 3: Failed to update ARQCOR - {update_result['error']}")
             
             # Check for major version changes
             major_changes = version_check.get("major_changes", [])
@@ -235,65 +230,63 @@ async def validate_feito_conferido(
         checklist_items.extend([
             {
                 "item": "Dependencies validation",
-                "result": "PASS",
-                "notes": "All dependencies are in approved list"
+                "result": "NOT_CHECKED",
+                "notes": "Repository validation pending implementation"
             },
             {
-                "item": "Security vulnerabilities scan",
-                "result": "PASS",
-                "notes": "No critical vulnerabilities found"
+                "item": "OpenAPI specification",
+                "result": "NOT_CHECKED", 
+                "notes": "Contract validation pending implementation"
             },
             {
-                "item": "OpenAPI contract validation",
-                "result": "PASS" if not api_gateway_components else "MANUAL",
-                "notes": "Contracts match VT specifications" if not api_gateway_components 
-                        else "API Gateway contracts may differ - manual check required"
+                "item": "Project structure",
+                "result": "NOT_CHECKED",
+                "notes": "Code analysis pending implementation"
             }
         ])
         
         # Add checklist to ARQCOR form
-        checklist_result = await add_validation_checklist_to_form(
-            arqcor_form_id, # type: ignore
-            checklist_items,
-            tool_context
-        )
+        if arqcor_form_id:
+            checklist_result = await add_validation_checklist_to_form(
+                arqcor_form_id,
+                checklist_items,
+                tool_context
+            )
+            
+            if "error" in checklist_result:
+                warnings.append(
+                    f"Stage 4: Failed to add checklist to ARQCOR - {checklist_result['error']}"
+                )
         
-        if "error" in checklist_result:
-            warnings.append(f"Stage 4: Failed to add checklist - {checklist_result['error']}")
+        warnings.append("Stage 4: Code validation not fully implemented - manual review required")
+        manual_actions.append("Perform manual code review and contract validation")
         
         stages_completed.append("Code/Contract Validation")
         
     except Exception as e:
         warnings.append(f"Stage 4: Unexpected error - {str(e)}")
-        manual_actions.append("Manual code and contract validation required")
+        manual_actions.append("Manual code/contract validation required")
     
-    # Determine final status
-    if errors:
-        overall_status = "FAILED"
-    elif manual_actions:
-        overall_status = "REQUIRES_MANUAL_ACTION"
-    else:
-        overall_status = "APPROVED"
-    
-    # Build final response
-    response = _build_validation_response(
+    # Return final validation response
+    return _format_validation_response(
         ticket_id, overall_status, stages_completed,
         errors, warnings, manual_actions, arqcor_form_id
     )
-    
-    return response
 
 
-def _build_validation_response(
+def _format_validation_response(
     ticket_id: str,
     overall_status: str,
     stages_completed: List[str],
     errors: List[str],
     warnings: List[str],
     manual_actions: List[str],
-    arqcor_form_id: Optional[str] = None
+    arqcor_form_id: Optional[str]
 ) -> Dict[str, Any]:
-    """Builds the validation response dictionary.
+    """Formats the validation response with all results.
+
+    Internal helper function to create consistent response format
+    for validation results.
 
     Args:
         ticket_id: Validated ticket ID.
@@ -342,16 +335,20 @@ def _build_validation_response(
 async def validate_code_repository(
     repository_url: str,
     component_name: str,
-    tool_context: ToolContext
+    tool_context: ToolContext,
+    access_token: Optional[str] = None
 ) -> Dict[str, Any]:
     """Validates a component's source code repository.
 
-    Checks repository structure, dependencies, and configuration files.
+    Performs comprehensive validation including repository structure,
+    dependencies, configuration files, and OpenAPI specifications.
+    Supports both Git and Bitbucket repositories.
 
     Args:
         repository_url: URL of the Git repository.
         component_name: Name of the component.
         tool_context: ADK tool context.
+        access_token: Optional access token for private repositories.
 
     Returns:
         Dictionary containing:
@@ -361,6 +358,7 @@ async def validate_code_repository(
             - dependencies_valid: Boolean for dependency validation
             - structure_valid: Boolean for project structure
             - issues: List of issues found
+            - repository_info: Additional repo metadata (if available)
             - error: Error message if validation failed
 
     Example:
@@ -379,16 +377,158 @@ async def validate_code_repository(
             "issues": []
         }
     """
-    # This is a placeholder implementation
-    # In production, this would clone/access the repository
-    # and perform actual code analysis
+    issues = []
+    has_openapi = False
+    dependencies_valid = True
+    structure_valid = True
+    repository_info = {}
     
-    return {
-        "component": component_name,
-        "repository_url": repository_url,
-        "has_openapi": True,
-        "dependencies_valid": True,
-        "structure_valid": True,
-        "issues": [],
-        "note": "Code validation not yet implemented - manual verification required"
-    }
+    try:
+        # Check if it's a Bitbucket repository
+        is_bitbucket = "bitbucket.org" in repository_url
+        
+        # Get repository information if Bitbucket
+        if is_bitbucket:
+            repo_info = await get_repository_info(
+                repository_url,
+                access_token,
+                tool_context
+            )
+            
+            if "error" in repo_info:
+                return {
+                    "component": component_name,
+                    "repository_url": repository_url,
+                    "has_openapi": False,
+                    "dependencies_valid": False,
+                    "structure_valid": False,
+                    "issues": [f"Failed to access repository: {repo_info['error']}"],
+                    "error": repo_info['error']
+                }
+            
+            repository_info = {
+                "provider": "bitbucket",
+                "default_branch": repo_info.get("default_branch", "main"),
+                "language": repo_info.get("language", "unknown"),
+                "is_private": repo_info.get("is_private", False)
+            }
+            
+            # Get tags to check for releases
+            tags_info = await list_repository_tags(
+                repository_url,
+                access_token,
+                tool_context
+            )
+            
+            if not tags_info.get("error"):
+                repository_info["latest_tag"] = tags_info.get("latest_tag")
+                repository_info["total_tags"] = tags_info.get("total_count", 0)
+                
+                if tags_info.get("total_count", 0) == 0:
+                    issues.append("No release tags found in repository")
+        else:
+            repository_info = {"provider": "git"}
+        
+        # Clone repository for analysis
+        clone_result = await clone_repository(
+            repository_url,
+            repository_info.get("default_branch", "main"),
+            tool_context
+        )
+        
+        if not clone_result.get("success"):
+            return {
+                "component": component_name,
+                "repository_url": repository_url,
+                "has_openapi": False,
+                "dependencies_valid": False,
+                "structure_valid": False,
+                "issues": [f"Failed to clone repository: {clone_result.get('error', 'Unknown error')}"],
+                "repository_info": repository_info,
+                "error": clone_result.get('error')
+            }
+        
+        repo_path = clone_result["path"]
+        
+        try:
+            # Analyze project structure
+            structure_result = await analyze_project_structure(repo_path, tool_context)
+            
+            structure_valid = structure_result.get("structure_valid", False)
+            if not structure_valid:
+                missing_dirs = structure_result.get("missing_directories", [])
+                if missing_dirs:
+                    issues.append(f"Missing required directories: {', '.join(missing_dirs)}")
+            
+            repository_info["project_type"] = structure_result.get("project_type", "unknown")
+            repository_info["build_system"] = structure_result.get("build_system", "unknown")
+            repository_info["detected_files"] = structure_result.get("detected_files", [])
+            
+            # Validate dependencies
+            deps_result = await validate_dependencies(repo_path, tool_context)
+            
+            dependencies_valid = deps_result.get("dependencies_valid", True)
+            
+            deprecated_deps = deps_result.get("deprecated_dependencies", [])
+            if deprecated_deps:
+                issues.extend([f"Deprecated dependency: {dep}" for dep in deprecated_deps])
+            
+            security_issues = deps_result.get("security_issues", [])
+            if security_issues:
+                dependencies_valid = False
+                issues.extend([f"Security issue: {issue}" for issue in security_issues])
+            
+            # Check for OpenAPI specification
+            openapi_result = await find_openapi_spec(repo_path, tool_context)
+            
+            has_openapi = openapi_result.get("has_openapi", False)
+            
+            if has_openapi:
+                repository_info["openapi_locations"] = openapi_result.get("spec_locations", [])
+                repository_info["openapi_version"] = openapi_result.get("spec_version")
+                
+                validation_errors = openapi_result.get("validation_errors", [])
+                if validation_errors:
+                    issues.extend([f"OpenAPI validation: {error}" for error in validation_errors])
+            else:
+                # Only add as issue for Spring Boot services
+                if component_name.startswith("sboot-") or repository_info.get("project_type") == "java":
+                    issues.append("OpenAPI specification not found")
+            
+            # Additional validations based on component type
+            if component_name.endswith("-gateway"):
+                if not has_openapi:
+                    issues.append("API Gateway components must have OpenAPI specification")
+                    dependencies_valid = False
+            
+            # Check for configuration files
+            config_files = ["Dockerfile", "docker-compose.yml", ".gitlab-ci.yml", "Jenkinsfile"]
+            found_configs = [f for f in config_files if f in repository_info.get("detected_files", [])]
+            
+            if not found_configs:
+                issues.append("No CI/CD configuration files found (Dockerfile, Jenkinsfile, etc.)")
+            
+        finally:
+            # Cleanup cloned repository
+            await cleanup_repository(repo_path, tool_context)
+        
+        return {
+            "component": component_name,
+            "repository_url": repository_url,
+            "has_openapi": has_openapi,
+            "dependencies_valid": dependencies_valid,
+            "structure_valid": structure_valid,
+            "issues": issues,
+            "repository_info": repository_info
+        }
+        
+    except Exception as e:
+        return {
+            "component": component_name,
+            "repository_url": repository_url,
+            "has_openapi": False,
+            "dependencies_valid": False,
+            "structure_valid": False,
+            "issues": [f"Validation failed: {str(e)}"],
+            "error": f"Unexpected error during validation: {str(e)}"
+        }
