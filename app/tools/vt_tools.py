@@ -571,53 +571,50 @@ async def list_all_components_by_status(
 
 
 async def get_blizzdesign_export(jt_id: str, tool_context: ToolContext) -> Dict[str, Any]:
-    """Retrieves BlizzDesign export data for a JT.
-
-    Fetches the technical architecture export from BlizzDesign
-    containing detailed component and relationship information.
+    """Fetches the technical architecture export from BlizzDesign.
+    
+    BlizzDesign is an enterprise architecture modeling tool that uses
+    ArchiMate notation. It exports architecture diagrams as JSON containing
+    elements (components, services, artifacts) and their relationships.
 
     Args:
         jt_id: The JT (Jornada Técnica) identifier.
         tool_context: ADK tool context for state management.
 
     Returns:
-        Dictionary containing:
-            - jt_id: The JT identifier
-            - components: List of components with stereotypes
-            - element_count: Total number of elements
-            - relationship_count: Total number of relationships
-            - raw_data: Complete BlizzDesign export (if needed)
-            - error: Error message if retrieval failed
+        Complete BlizzDesign export data in JSON format containing:
+            - viewInfo: View information with name and JT
+            - elements: Array of ArchiMate elements
+            - relationships: Array of element relationships
+            - metadata: Export metadata with counts
+        
+        Or error dictionary if retrieval failed:
+            - jt_id: The requested JT identifier
+            - error: Error message describing the failure
 
     Example:
         >>> result = await get_blizzdesign_export("JT-147338", tool_context)
-        >>> print(result)
-        {
-            "jt_id": "JT-147338",
-            "components": [
-                {"name": "caapi-hubd-base-avaliacao-v1", "stereotype": "NOVO"},
-                {"name": "flutmicro-hubd-base-app-rating", "stereotype": "ALTERADO"}
-            ],
-            "element_count": 33,
-            "relationship_count": 46
-        }
+        >>> print(result["viewInfo"]["name"])
+        "Visão Técnica - NPS/CES/CSAT"
+        >>> print(result["metadata"]["elementCount"])
+        33
     """
     try:
-        # For this implementation, we'll simulate the BlizzDesign API
-        # In production, this would be an actual API call
+        client = await get_vt_client()
+        response = await client.get(f"/blizzdesign/export/{jt_id}")
         
-        # Example of what the API call would look like:
-        # client = await get_vt_client()
-        # response = await client.get(f"/blizzdesign/export/{jt_id}")
-        # blizzdesign_data = response.json()
+        if response.status_code != 200:
+            return {
+                "jt_id": jt_id,
+                "error": f"BlizzDesign API returned status {response.status_code}"
+            }
         
-        # For now, return a structured response based on the example data
-        # This would be replaced with actual API integration
+        blizzdesign_data = response.json()
         
-        return {
-            "jt_id": jt_id,
-            "error": "BlizzDesign integration not yet implemented. Please use manual export."
-        }
+        # Store in context for reuse
+        tool_context.state[f"blizzdesign_export_{jt_id}"] = blizzdesign_data
+        
+        return blizzdesign_data
         
     except Exception as e:
         return {
@@ -648,13 +645,11 @@ async def parse_blizzdesign_data(
             - modified_components: Components with ALTERADO stereotype
             - removed_components: Components with REMOVIDO stereotype
             - maintained_components: Components with MANTIDO stereotype
+            - element_count: Total elements in the diagram
+            - relationship_count: Total relationships in the diagram
 
     Example:
-        >>> data = {
-        ...     "viewInfo": {"name": "Visão Técnica - NPS", "JT": "JT-147338"},
-        ...     "elements": [...],
-        ...     "metadata": {"elementCount": 33}
-        ... }
+        >>> data = await get_blizzdesign_export("JT-147338", tool_context)
         >>> result = await parse_blizzdesign_data(data, tool_context)
         >>> print(result["new_components"])
         ["caapi-hubd-base-avaliacao-v1", "sboot-hubd-base-atom-avaliacao"]
@@ -664,7 +659,7 @@ async def parse_blizzdesign_data(
         view_name = view_info.get("name", "Unknown")
         jt_id = view_info.get("JT", "")
         
-        # Extract components
+        # Extract components using utility function
         components = extract_blizzdesign_components(blizzdesign_json)
         
         # Group by stereotype
@@ -686,11 +681,18 @@ async def parse_blizzdesign_data(
             elif stereotype == "MANTIDO":
                 maintained_components.append(name)
         
+        # Get metadata
+        metadata = blizzdesign_json.get("metadata", {})
+        element_count = metadata.get("elementCount", 0)
+        relationship_count = metadata.get("relationshipCount", 0)
+        
         # Store parsed data in context
         tool_context.state[f"blizzdesign_{jt_id}"] = {
             "components": components,
             "new_components": new_components,
-            "modified_components": modified_components
+            "modified_components": modified_components,
+            "removed_components": removed_components,
+            "maintained_components": maintained_components
         }
         
         return {
@@ -701,7 +703,9 @@ async def parse_blizzdesign_data(
             "modified_components": modified_components,
             "removed_components": removed_components,
             "maintained_components": maintained_components,
-            "total_components": len(components)
+            "total_components": len(components),
+            "element_count": element_count,
+            "relationship_count": relationship_count
         }
         
     except Exception as e:
@@ -781,7 +785,7 @@ async def get_openapi_contract(
             "contract_version": contract_data.get("openapi", "3.0.0"),
             "endpoints": endpoints[:10],  # Return first 10 endpoints
             "total_endpoints": len(endpoints),
-            "contract_url": f"{get_settings().vt_base_url}/contracts/{component_name}/openapi.yaml"
+            "contract_url": f"{get_settings().vt.base_url}/contracts/{component_name}/openapi.yaml"
         }
         
     except Exception as e:
