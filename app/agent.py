@@ -25,11 +25,7 @@ validation, data masking, audit logging, and rate limiting.
 
 from google.adk.agents import Agent
 
-# from app.tools.validation_tools import (
-#     validate_feito_conferido,
-#     validate_code_repository
-# )
-from app.tools.mock.validation_tools import (
+from app.tools.validation_tools import (
     validate_feito_conferido,
     validate_code_repository
 )
