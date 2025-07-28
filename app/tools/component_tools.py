@@ -8,7 +8,7 @@ from typing import Dict, List, Any, Optional
 from google.adk.tools import ToolContext
 
 from ..utils.http_clients import get_portal_tech_client
-from ..utils.formatters import extract_version_from_string, compare_versions
+from ..utils.formatters import compare_versions
 from ..config.settings import get_settings
 
 
@@ -519,7 +519,7 @@ def _extract_environment_versions(env_versions: List[Dict[str, Any]]) -> Dict[st
         >>> print(result)
         {"prd": "1.0.0", "uat": "1.1.0", "des": None}
     """
-    versions = {"prd": None, "uat": None, "des": None}
+    versions: Dict[str, Optional[str]] = {"prd": None, "uat": None, "des": None}
     
     for env_version in env_versions:
         environment = env_version.get("environment", "").upper()

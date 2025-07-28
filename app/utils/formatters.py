@@ -26,7 +26,7 @@ def format_component_name(component_name: str) -> str:
         >>> format_component_name("auth.module")
         'auth-module'
     """
-    # Convert to lowercase and replace common separators with hyphens
+    
     formatted = component_name.lower()
     formatted = re.sub(r'[_.\s]+', '-', formatted)
     return formatted
@@ -87,7 +87,7 @@ def compare_versions(version1: str, version2: str) -> int:
     """
     def parse_version(v: str) -> tuple:
         parts = v.split('.')
-        return tuple(int(part) for part in parts[:3])  # major, minor, patch
+        return tuple(int(part) for part in parts[:3])  
     
     try:
         v1 = parse_version(version1)
@@ -100,14 +100,14 @@ def compare_versions(version1: str, version2: str) -> int:
         else:
             return 0
     except (ValueError, AttributeError):
-        # If parsing fails, do string comparison
+        
         return -1 if version1 < version2 else (1 if version1 > version2 else 0)
 
 
 def format_validation_result(status: str, 
-                           errors: List[str], 
-                           warnings: List[str],
-                           manual_actions: List[str]) -> str:
+                             errors: List[str], 
+                             warnings: List[str],
+                             manual_actions: List[str]) -> str:
     """Formats a validation result for display.
 
     Args:
@@ -205,7 +205,7 @@ def parse_component_list_from_text(text: str) -> Dict[str, str]:
         if not line or line.startswith('#') or line.startswith('//'):
             continue
         
-        # Try to parse JSON format first
+        
         if line.startswith('{') and line.endswith('}'):
             try:
                 import json
@@ -216,7 +216,7 @@ def parse_component_list_from_text(text: str) -> Dict[str, str]:
             except:
                 pass
         
-        # Pattern: "component -> version"
+        
         if '->' in line:
             parts = line.split('->')
             if len(parts) == 2:
@@ -224,14 +224,14 @@ def parse_component_list_from_text(text: str) -> Dict[str, str]:
                 version = parts[1].strip()
                 components[component_name] = version
         
-        # Pattern: "component: version"
+        
         elif ':' in line and not line.startswith('{'):
             parts = line.split(':', 1)
             if len(parts) == 2:
                 component_name = parts[0].strip()
                 version = parts[1].strip()
                 
-                # Handle comma-separated components with same version
+                
                 if ',' in component_name:
                     comp_names = [c.strip() for c in component_name.split(',')]
                     for comp in comp_names:
@@ -240,17 +240,17 @@ def parse_component_list_from_text(text: str) -> Dict[str, str]:
                 else:
                     components[component_name] = version
         
-        # Pattern: "component version" (last word is version if it looks like a version)
+        
         else:
             parts = line.split()
             if len(parts) >= 2 and re.match(r'^\d+\.\d+', parts[-1]):
                 version = parts[-1]
                 component_name = ' '.join(parts[:-1])
                 components[component_name] = version
-            # Single component without version
+            
             elif len(parts) == 1:
                 components[parts[0]] = ""
-            # Handle comma-separated components
+            
             elif ',' in line:
                 comp_names = [c.strip() for c in line.split(',')]
                 for comp in comp_names:
@@ -292,7 +292,7 @@ def extract_blizzdesign_components(blizzdesign_data: Dict[str, Any]) -> List[Dic
     for element in elements:
         element_type = element.get("type", "")
         
-        # Check for ApplicationComponent in various formats
+        
         if any(comp_type in element_type for comp_type in 
                ["ApplicationComponent", "Component", "Service"]):
             
@@ -302,12 +302,12 @@ def extract_blizzdesign_components(blizzdesign_data: Dict[str, Any]) -> List[Dic
                 "type": element_type.split(":")[-1] if ":" in element_type else element_type
             }
             
-            # Extract version from properties if available
+            
             properties = element.get("properties", {})
             if "version" in properties:
                 component_info["version"] = properties["version"]
             
-            # Extract additional metadata
+            
             if "description" in element:
                 component_info["description"] = element["description"]
             
@@ -368,7 +368,7 @@ def format_component_status_summary(components_by_status: Dict[str, List[str]]) 
         result.append(f"{icon} {status} ({count}):")
         
         if components:
-            # Show first 5 components
+            
             for comp in components[:5]:
                 result.append(f"  • {comp}")
             if len(components) > 5:
@@ -404,11 +404,11 @@ def format_architecture_validation_report(
         ...     "missing_components": ["service-x", "service-y"]
         ... }
         >>> print(format_architecture_validation_report(result))
-        # Detailed formatted report...
+        
     """
     lines = ["📋 Architecture Validation Report", "=" * 40]
     
-    # Summary section
+    
     if "validation_summary" in validation_result:
         summary = validation_result["validation_summary"]
         lines.extend([
@@ -421,14 +421,14 @@ def format_architecture_validation_report(
             ""
         ])
     
-    # Status breakdown
+    
     if "status_breakdown" in validation_result and include_details:
         lines.append(format_component_status_summary(
             validation_result["status_breakdown"]
         ))
         lines.append("")
     
-    # Missing components
+    
     if "missing_components" in validation_result:
         missing = validation_result["missing_components"]
         if missing:
@@ -438,7 +438,7 @@ def format_architecture_validation_report(
                 ""
             ])
     
-    # Found components details
+    
     if "found_components" in validation_result and include_details:
         found = validation_result["found_components"]
         if found:
@@ -451,11 +451,109 @@ def format_architecture_validation_report(
                 lines.append(f"  ... and {len(found) - 10} more")
             lines.append("")
     
-    # Timestamp
+    
     lines.extend([
         "",
         f"Generated: {format_timestamp()}",
         "=" * 40
     ])
     
+    return "\n".join(lines)
+
+
+def parse_jira_components(components_data: List[Dict[str, Any]]) -> List[str]:
+    """Extracts component names from Jira's component field data.
+
+    Jira's API often returns components as a list of objects.
+    This function extracts just the 'name' from each object.
+
+    Args:
+        components_data: The raw component data from Jira API,
+                         typically a list of dictionaries.
+
+    Returns:
+        A list of component name strings.
+
+    Example:
+        >>> data = [{'id': '1', 'name': 'user-service'}, {'id': '2', 'name': 'auth-module'}]
+        >>> parse_jira_components(data)
+        ['user-service', 'auth-module']
+        >>> parse_jira_components(None)
+        []
+    """
+    if not isinstance(components_data, list):
+        return []
+    
+    return [
+        name for comp in components_data
+        if isinstance(comp, dict) and (name := comp.get("name")) is not None
+    ]
+
+
+def parse_development_cycle(cycle_data: Any) -> str:
+    """Parses the development cycle from a Jira custom field.
+
+    Handles different data structures that a custom field might have
+    (e.g., a string or a dictionary with a 'value' key).
+
+    Args:
+        cycle_data: The raw data from Jira's custom field.
+
+    Returns:
+        The development cycle as a string, or an empty string if not found.
+
+    Example:
+        >>> parse_development_cycle({'value': 'Sprint 23'})
+        'Sprint 23'
+        >>> parse_development_cycle('Sprint 24')
+        'Sprint 24'
+        >>> parse_development_cycle(None)
+        ''
+    """
+    if isinstance(cycle_data, dict):
+        
+        return cycle_data.get("value", "")
+    
+    if isinstance(cycle_data, str):
+        return cycle_data
+        
+    return ""
+
+def format_validation_scope(
+    development_cycle: str, 
+    architecture: str, 
+    components: List[str]
+) -> str:
+    lines = [
+        "h2. Escopo da Validação de Aderência",
+        f"*Ciclo de Desenvolvimento:* {development_cycle or 'Não informado'}",
+        f"*Arquitetura de Referência:* {architecture or 'Não informada'}",
+        "",
+        "h3. Componentes no Escopo:"
+    ]
+    
+    if components:
+        for component in components:
+            lines.append(f"* {component}")
+    else:
+        lines.append("_Nenhum componente informado._")
+        
+    return "\n".join(lines)
+
+
+def format_version_changes(version_changes: List[Dict[str, str]]) -> str:
+    if not version_changes:
+        return "h3. Alterações de Versão\n_Nenhuma alteração de versão detectada._"
+
+    lines = [
+        "h2. Alterações de Versão dos Componentes",
+        "||Componente||Versão Anterior||Nova Versão||"
+    ]
+    
+    for change in version_changes:
+        component = change.get("component", "N/A")
+        from_version = change.get("from_version", "N/A")
+        to_version = change.get("to_version", "N/A")
+        lines.append(f"|{component}|{from_version}|{to_version}|")
+        
     return "\n".join(lines)
