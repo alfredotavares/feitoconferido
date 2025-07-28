@@ -11,19 +11,210 @@ from google.adk.tools import ToolContext
 from datetime import datetime
 import random
 
-# Note: These imports would be used in production
-# from ..utils.formatters import format_validation_result
-# from .jira_tools import get_jira_ticket, validate_pdi_components
-# from .vt_tools import validate_components_in_vt
-# from .portal_tech_tools import check_multiple_component_versions
-# from .arqcor_tools import (
-#     create_arqcor_form, 
-#     update_arqcor_form_with_versions,
-#     add_validation_checklist_to_form
-# )
+
+# ===== BLIZZDESIGN MOCK DATA =====
+BLIZZDESIGN_MOCK_EXPORTS = {
+    "JT-147338": {
+        "viewInfo": {
+            "name": "Visão Técnica - NPS/CES/CSAT",
+            "JT": "JT-147338"
+        },
+        "elements": [
+            {
+                "id": "bb502786-647f-ef11-84d2-16ffc1277435",
+                "name": "caapi-hubd-base-avaliacao-v1",
+                "type": "ArchiMate:ApplicationComponent",
+                "stereotype": "NOVO"
+            },
+            {
+                "id": "4680d0d7-647f-ef11-84d2-16ffc1277435",
+                "name": "GET /v1/evaluation/{evaluationType}",
+                "type": "ArchiMate:ApplicationService",
+                "stereotype": "NOVO"
+            },
+            {
+                "id": "5e9ea4d8-2480-ef11-84d2-16ffe58a20bb",
+                "name": "POST /v1/evaluation/{evaluationType}",
+                "type": "ArchiMate:ApplicationService",
+                "stereotype": "NOVO"
+            },
+            {
+                "id": "fc413269-0081-ef11-84d2-16ffc926a3dd",
+                "name": "caapi-hubd-base-avaliacao-gravar-v3",
+                "type": "ArchiMate:ApplicationComponent",
+                "stereotype": "REMOVIDO"
+            },
+            {
+                "id": "11a00ad4-3862-ee11-844a-16243b297e85",
+                "name": "flutmicro-hubd-base-app-rating",
+                "type": "ArchiMate:ApplicationComponent",
+                "stereotype": "ALTERADO"
+            },
+            {
+                "id": "748ef25d-737f-ef11-84d2-16ffc1277435",
+                "name": "ng15-hubd-base-portal-configuracao",
+                "type": "ArchiMate:ApplicationComponent",
+                "stereotype": "ALTERADO"
+            },
+            {
+                "id": "61dfb81a-2bcc-ee11-8469-16b943249bff",
+                "name": "HUBDAvaliacaoAplicativo_APPL",
+                "type": "ArchiMate:TechnologyArtifact",
+                "stereotype": "ALTERADO"
+            },
+            {
+                "id": "c7a4e14a-757f-ef11-84d2-16ffc1277435",
+                "name": "springboot-hubd-base-bff-portal-configuracao",
+                "type": "ArchiMate:ApplicationComponent",
+                "stereotype": "ALTERADO"
+            },
+            {
+                "id": "9f9fc917-1c80-ef11-84d2-16ffe58a20bb",
+                "name": "sboot-hubd-base-atom-avaliacao",
+                "type": "ArchiMate:ApplicationComponent",
+                "stereotype": "NOVO"
+            },
+            {
+                "id": "05aeb61f-0f7d-ef11-84d2-16ffe90bcc57",
+                "name": "Avaliação e Análise pelo Cliente em Canais",
+                "type": "ArchiMate:ApplicationCollaboration",
+                "stereotype": "NOVO"
+            },
+            {
+                "id": "ed9f0ad4-3862-ee11-844a-16243b297e85",
+                "name": "sboot-hubd-base-atom-avaliacao-store",
+                "type": "ArchiMate:ApplicationComponent",
+                "stereotype": "REMOVIDO"
+            },
+            {
+                "id": "f29f0ad4-3862-ee11-844a-16243b297e85",
+                "name": "sboot-hubd-base-orch-avaliacao-store",
+                "type": "ArchiMate:ApplicationComponent",
+                "stereotype": "REMOVIDO"
+            }
+        ],
+        "relationships": [
+            {
+                "id": "3da9c240-6a7f-ef11-84d2-16ffc1277435",
+                "type": "ArchiMate:ApplicationServiceApplicationComponentUse",
+                "stereotype": "NOVO",
+                "source": {
+                    "id": "1a2333f4-697f-ef11-84d2-16ffc1277435",
+                    "name": "GET /v1/evaluations/{evaluationType}",
+                    "type": "ArchiMate:ApplicationService"
+                },
+                "target": {
+                    "id": "bb502786-647f-ef11-84d2-16ffc1277435",
+                    "name": "caapi-hubd-base-avaliacao-v1",
+                    "type": "ArchiMate:ApplicationComponent"
+                }
+            },
+            {
+                "id": "97d5a166-2480-ef11-84d2-16ffe58a20bb",
+                "type": "ArchiMate:ApplicationServiceApplicationComponentUse",
+                "stereotype": "NOVO",
+                "source": {
+                    "id": "27dbeac1-697f-ef11-84d2-16ffc1277435",
+                    "name": "POST /v1/evaluations/{evaluationType}",
+                    "type": "ArchiMate:ApplicationService"
+                },
+                "target": {
+                    "id": "bb502786-647f-ef11-84d2-16ffc1277435",
+                    "name": "caapi-hubd-base-avaliacao-v1",
+                    "type": "ArchiMate:ApplicationComponent"
+                }
+            },
+            {
+                "id": "c72e7260-2080-ef11-84d2-16ffe58a20bb",
+                "type": "ArchiMate:ApplicationComponentApplicationServiceRealisation",
+                "source": {
+                    "id": "bb502786-647f-ef11-84d2-16ffc1277435",
+                    "name": "caapi-hubd-base-avaliacao-v1",
+                    "type": "ArchiMate:ApplicationComponent"
+                },
+                "target": {
+                    "id": "4680d0d7-647f-ef11-84d2-16ffc1277435",
+                    "name": "GET /v1/evaluation/{evaluationType}",
+                    "type": "ArchiMate:ApplicationService"
+                }
+            }
+        ],
+        "metadata": {
+            "elementCount": 33,
+            "relationshipCount": 46
+        }
+    },
+    "JT-DEFAULT": {
+        "viewInfo": {
+            "name": "Visão Técnica - Sistema Padrão",
+            "JT": "JT-DEFAULT"
+        },
+        "elements": [
+            {
+                "id": "mock-component-1",
+                "name": "sboot-exemplo-api",
+                "type": "ArchiMate:ApplicationComponent",
+                "stereotype": "NOVO"
+            },
+            {
+                "id": "mock-service-1",
+                "name": "GET /v1/exemplo",
+                "type": "ArchiMate:ApplicationService",
+                "stereotype": "NOVO"
+            },
+            {
+                "id": "mock-component-2",
+                "name": "user-service",
+                "type": "ArchiMate:ApplicationComponent",
+                "stereotype": "MANTIDO"
+            },
+            {
+                "id": "mock-component-3",
+                "name": "auth-module",
+                "type": "ArchiMate:ApplicationComponent",
+                "stereotype": "MANTIDO"
+            },
+            {
+                "id": "mock-component-4",
+                "name": "notification-service",
+                "type": "ArchiMate:ApplicationComponent",
+                "stereotype": "ALTERADO"
+            },
+            {
+                "id": "mock-component-5",
+                "name": "api-gateway",
+                "type": "ArchiMate:ApplicationComponent",
+                "stereotype": "NOVO"
+            }
+        ],
+        "relationships": [
+            {
+                "id": "mock-rel-1",
+                "type": "ArchiMate:ApplicationComponentApplicationServiceRealisation",
+                "stereotype": "NOVO",
+                "source": {
+                    "id": "mock-component-1",
+                    "name": "sboot-exemplo-api",
+                    "type": "ArchiMate:ApplicationComponent"
+                },
+                "target": {
+                    "id": "mock-service-1",
+                    "name": "GET /v1/exemplo",
+                    "type": "ArchiMate:ApplicationService"
+                }
+            }
+        ],
+        "metadata": {
+            "elementCount": 6,
+            "relationshipCount": 1,
+            "exportDate": datetime.now().isoformat()
+        }
+    }
+}
 
 
-# MOCK: Format validation result
+# ===== MOCK HELPER FUNCTIONS =====
+
 def format_validation_result(
     overall_status: str,
     errors: List[str],
@@ -51,7 +242,113 @@ def format_validation_result(
     return summary
 
 
-# MOCK: Get Jira ticket
+def extract_blizzdesign_components(blizzdesign_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Extracts application components from BlizzDesign export."""
+    components = []
+    
+    for element in blizzdesign_data.get("elements", []):
+        if element.get("type") == "ArchiMate:ApplicationComponent":
+            components.append({
+                "name": element.get("name"),
+                "stereotype": element.get("stereotype", "MANTIDO"),
+                "id": element.get("id"),
+                "type": element.get("type")
+            })
+    
+    return components
+
+
+# ===== MOCK VT/BLIZZDESIGN FUNCTIONS =====
+
+async def get_blizzdesign_export(jt_id: str, tool_context: ToolContext) -> Dict[str, Any]:
+    """MOCKED: Returns mock BlizzDesign export data."""
+    # Store mock flag in context
+    tool_context.state["use_mock"] = True
+    
+    # Check if we have specific mock data for this JT
+    if jt_id in BLIZZDESIGN_MOCK_EXPORTS:
+        export_data = BLIZZDESIGN_MOCK_EXPORTS[jt_id]
+    else:
+        # Return default mock data
+        export_data = BLIZZDESIGN_MOCK_EXPORTS["JT-DEFAULT"]
+        # Update JT ID to match request
+        export_data["viewInfo"]["JT"] = jt_id
+        export_data["viewInfo"]["name"] = f"Visão Técnica - {jt_id}"
+    
+    # Store in context for reuse
+    tool_context.state[f"blizzdesign_export_{jt_id}"] = export_data
+    tool_context.state[f"blizzdesign_mock_{jt_id}"] = export_data
+    
+    return export_data
+
+
+async def parse_blizzdesign_data(
+    blizzdesign_json: Dict[str, Any], 
+    tool_context: ToolContext
+) -> Dict[str, Any]:
+    """MOCKED: Parses BlizzDesign export data."""
+    try:
+        view_info = blizzdesign_json.get("viewInfo", {})
+        view_name = view_info.get("name", "Unknown")
+        jt_id = view_info.get("JT", "")
+        
+        # Extract components
+        components = extract_blizzdesign_components(blizzdesign_json)
+        
+        # Group by stereotype
+        new_components = []
+        modified_components = []
+        removed_components = []
+        maintained_components = []
+        
+        for comp in components:
+            name = comp["name"]
+            stereotype = comp["stereotype"]
+            
+            if stereotype == "NOVO":
+                new_components.append(name)
+            elif stereotype == "ALTERADO":
+                modified_components.append(name)
+            elif stereotype == "REMOVIDO":
+                removed_components.append(name)
+            elif stereotype == "MANTIDO":
+                maintained_components.append(name)
+        
+        # Get metadata
+        metadata = blizzdesign_json.get("metadata", {})
+        element_count = metadata.get("elementCount", 0)
+        relationship_count = metadata.get("relationshipCount", 0)
+        
+        # Store parsed data in context
+        tool_context.state[f"blizzdesign_{jt_id}"] = {
+            "components": components,
+            "new_components": new_components,
+            "modified_components": modified_components,
+            "removed_components": removed_components,
+            "maintained_components": maintained_components
+        }
+        
+        return {
+            "view_name": view_name,
+            "jt_id": jt_id,
+            "components": components,
+            "new_components": new_components,
+            "modified_components": modified_components,
+            "removed_components": removed_components,
+            "maintained_components": maintained_components,
+            "total_components": len(components),
+            "element_count": element_count,
+            "relationship_count": relationship_count
+        }
+        
+    except Exception as e:
+        return {
+            "error": f"Failed to parse BlizzDesign data: {str(e)}"
+        }
+
+
+# ===== MOCK JIRA FUNCTIONS =====
+
 async def get_jira_ticket(ticket_id: str, tool_context: ToolContext) -> Dict[str, Any]:
     """MOCKED: Returns mock Jira ticket data matching real API structure."""
     # Simulate different scenarios based on ticket ID
@@ -104,7 +401,6 @@ async def get_jira_ticket(ticket_id: str, tool_context: ToolContext) -> Dict[str
     }
 
 
-# MOCK: Validate PDI components
 async def validate_pdi_components(ticket_id: str, tool_context: ToolContext) -> Dict[str, Any]:
     """MOCKED: Returns mock PDI validation result."""
     # Simulate different scenarios
@@ -133,7 +429,6 @@ async def validate_pdi_components(ticket_id: str, tool_context: ToolContext) -> 
     }
 
 
-# MOCK: Validate components in VT
 async def validate_components_in_vt(
     ticket_id: str, 
     components: List[str], 
@@ -177,7 +472,8 @@ async def validate_components_in_vt(
     }
 
 
-# MOCK: Create ARQCOR form
+# ===== MOCK ARQCOR FUNCTIONS =====
+
 async def create_arqcor_form(
     ticket_id: str,
     evaluator_name: str,
@@ -204,7 +500,45 @@ async def create_arqcor_form(
     }
 
 
-# MOCK: Check multiple component versions
+async def update_arqcor_form_with_versions(
+    form_id: str,
+    tool_context: ToolContext
+) -> Dict[str, Any]:
+    """MOCKED: Returns mock ARQCOR update result."""
+    # Simulate error scenario
+    if "ERROR" in form_id:
+        return {
+            "form_id": form_id,
+            "error": "Failed to update ARQCOR form: Form locked"
+        }
+    
+    return {
+        "form_id": form_id,
+        "updated": True
+    }
+
+
+async def add_validation_checklist_to_form(
+    form_id: str,
+    checklist_items: List[Dict[str, Any]],
+    tool_context: ToolContext
+) -> Dict[str, Any]:
+    """MOCKED: Returns mock checklist addition result."""
+    # Simulate error scenario
+    if "ERROR" in form_id:
+        return {
+            "form_id": form_id,
+            "error": "Failed to add checklist: Database error"
+        }
+    
+    return {
+        "form_id": form_id,
+        "checklist_added": True
+    }
+
+
+# ===== MOCK PORTAL TECH FUNCTIONS =====
+
 async def check_multiple_component_versions(
     components: List[Dict[str, str]],
     tool_context: ToolContext
@@ -298,46 +632,7 @@ async def check_multiple_component_versions(
     }
 
 
-# MOCK: Update ARQCOR form with versions
-async def update_arqcor_form_with_versions(
-    form_id: str,
-    tool_context: ToolContext
-) -> Dict[str, Any]:
-    """MOCKED: Returns mock ARQCOR update result."""
-    # Simulate error scenario
-    if "ERROR" in form_id:
-        return {
-            "form_id": form_id,
-            "error": "Failed to update ARQCOR form: Form locked"
-        }
-    
-    return {
-        "form_id": form_id,
-        "updated": True
-    }
-
-
-# MOCK: Add validation checklist to form
-async def add_validation_checklist_to_form(
-    form_id: str,
-    checklist_items: List[Dict[str, Any]],
-    tool_context: ToolContext
-) -> Dict[str, Any]:
-    """MOCKED: Returns mock checklist addition result."""
-    # Simulate error scenario
-    if "ERROR" in form_id:
-        return {
-            "form_id": form_id,
-            "error": "Failed to add checklist: Database error"
-        }
-    
-    return {
-        "form_id": form_id,
-        "checklist_added": True
-    }
-
-
-# Main validation functions for Feito/Conferido process
+# ===== MAIN VALIDATION FUNCTION =====
 
 async def validate_feito_conferido(
     ticket_id: str,
@@ -389,10 +684,7 @@ async def validate_feito_conferido(
     
     # Stage 1: Ticket and Component Validation
     try:
-        # PRODUCTION CODE COMMENTED:
-        # ticket_info = await get_jira_ticket(ticket_id, tool_context)
-        
-        # MOCK: Get ticket information
+        # Get ticket information
         ticket_info = await get_jira_ticket(ticket_id, tool_context)
         
         if "error" in ticket_info:
@@ -405,10 +697,6 @@ async def validate_feito_conferido(
         
         # Validate PDI components if it's a PDI ticket
         if ticket_id.startswith("PDI-"):
-            # PRODUCTION CODE COMMENTED:
-            # pdi_validation = await validate_pdi_components(ticket_id, tool_context)
-            
-            # MOCK: Validate PDI
             pdi_validation = await validate_pdi_components(ticket_id, tool_context)
             
             if not pdi_validation.get("is_valid", False):
@@ -435,10 +723,7 @@ async def validate_feito_conferido(
                 errors, warnings, manual_actions
             )
         
-        # PRODUCTION CODE COMMENTED:
-        # vt_validation = await validate_components_in_vt(ticket_id, components, tool_context)
-        
-        # MOCK: Validate components in VT
+        # Validate components in VT
         vt_validation = await validate_components_in_vt(ticket_id, components, tool_context)
         
         if "error" in vt_validation:
@@ -472,10 +757,6 @@ async def validate_feito_conferido(
     
     # Stage 2: ARQCOR Form Creation
     try:
-        # PRODUCTION CODE COMMENTED:
-        # arqcor_result = await create_arqcor_form(ticket_id, evaluator_name, tool_context)
-        
-        # MOCK: Create ARQCOR form
         arqcor_result = await create_arqcor_form(ticket_id, evaluator_name, tool_context)
         
         if "error" in arqcor_result:
@@ -521,13 +802,7 @@ async def validate_feito_conferido(
                 "version": version
             })
         
-        # PRODUCTION CODE COMMENTED:
-        # version_check = await check_multiple_component_versions(
-        #     components_with_versions, 
-        #     tool_context
-        # )
-        
-        # MOCK: Check versions
+        # Check versions
         version_check = await check_multiple_component_versions(
             components_with_versions, 
             tool_context
@@ -537,13 +812,6 @@ async def validate_feito_conferido(
             warnings.append(f"Stage 3: {version_check['error']}")
         else:
             # Update ARQCOR form with version info
-            # PRODUCTION CODE COMMENTED:
-            # update_result = await update_arqcor_form_with_versions(
-            #     arqcor_form_id,
-            #     tool_context
-            # )
-            
-            # MOCK: Update ARQCOR
             update_result = await update_arqcor_form_with_versions(
                 arqcor_form_id, # type: ignore
                 tool_context
@@ -615,14 +883,6 @@ async def validate_feito_conferido(
         ])
         
         # Add checklist to ARQCOR form
-        # PRODUCTION CODE COMMENTED:
-        # checklist_result = await add_validation_checklist_to_form(
-        #     arqcor_form_id,
-        #     checklist_items,
-        #     tool_context
-        # )
-        
-        # MOCK: Add checklist
         checklist_result = await add_validation_checklist_to_form(
             arqcor_form_id, # type: ignore
             checklist_items,
