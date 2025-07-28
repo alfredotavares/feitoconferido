@@ -19,7 +19,12 @@ from .vt_tools import (
     validate_components_in_vt,
     get_blizzdesign_export,
     parse_blizzdesign_data,
-    get_openapi_contract
+    get_openapi_contract,
+    load_local_architecture_data,
+    parse_component_list_from_text,
+    validate_components_vs_architecture,
+    search_component_by_name,
+    list_all_components_by_status
 )
 
 # Component (Portal Tech) tools
@@ -58,6 +63,11 @@ __all__ = [
     "get_blizzdesign_export",
     "parse_blizzdesign_data",
     "get_openapi_contract",
+    "load_local_architecture_data",
+    "parse_component_list_from_text",
+    "validate_components_vs_architecture",
+    "search_component_by_name",
+    "list_all_components_by_status",
     # Component (Portal Tech) tools
     "get_production_version",
     "compare_component_versions",
