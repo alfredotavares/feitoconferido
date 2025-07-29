@@ -1,19 +1,17 @@
-"""Main validation tools for Feito/Conferido process.
+"""Ferramentas principais de validação para o processo Feito/Conferido.
 
-Provides the primary validation tool that orchestrates
-the complete Feito/Conferido validation workflow.
+Fornece a ferramenta principal de validação que orquestra
+o fluxo completo de validação Feito/Conferido.
 """
 
 import os
 from typing import Dict, List, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from google.adk.tools import ToolContext
 
-# Conditional import based on environment variable
 USE_MOCK = os.getenv("USE_MOCK_TOOLS", "false").lower() == "true"
 
 if USE_MOCK:
-    # Import mocked tools for testing
     from .mock.tools_mocked import (
         get_jira_ticket,
         validate_pdi_components,
@@ -25,7 +23,6 @@ if USE_MOCK:
         format_validation_result
     )
 else:
-    # Import real tools for production
     from ..utils.formatters import format_validation_result
     from .integrations.jira import get_jira_ticket, validate_pdi_components
     from .integrations.blizzdesign import validate_components_in_vt
@@ -53,36 +50,37 @@ async def validate_feito_conferido(
     evaluator_name: str,
     tool_context: ToolContext
 ) -> Dict[str, Any]:
-    """Executes the complete Feito/Conferido validation process.
+    """Executa o processo completo de validação Feito/Conferido.
 
-    Orchestrates all four validation stages:
-    1. Component validation against VT
-    2. ARQCOR form creation
-    3. Version checking with Portal Tech
-    4. Code/contract validation
+    Orquestra todas as quatro etapas de validação:
+    1. Validação de componentes contra Visão Técnica (VT)
+       e PDI (Projeto de Desenvolvimento Integrado).
+    2. Criação de formulário ARQCOR.
+    3. Verificação de versões com Portal Tech.
+    4. Validação de código/contratos.
 
     Args:
-        ticket_id: Jira ticket identifier (PDI or JT).
-        evaluator_name: Name of the architect performing validation.
-        tool_context: ADK tool context for state management.
+        ticket_id: Identificador do ticket Jira (PDI ou JT).
+        evaluator_name: Nome do arquiteto realizando a validação.
+        tool_context: Contexto da ferramenta ADK para gerenciamento de estado.
 
     Returns:
-        Dictionary containing:
-            - ticket_id: The validated ticket
-            - overall_status: APPROVED, FAILED, or REQUIRES_MANUAL_ACTION
-            - stages_completed: List of completed stages
-            - errors: List of validation errors
-            - warnings: List of validation warnings
-            - manual_actions: List of required manual actions
-            - arqcor_form_id: Generated ARQCOR form ID
-            - summary: Human-readable validation summary
+        Dicionário contendo:
+            - ticket_id: O ticket validado
+            - overall_status: APPROVED, FAILED, ou REQUIRES_MANUAL_ACTION
+            - stages_completed: Lista de etapas concluídas
+            - errors: Lista de erros de validação
+            - warnings: Lista de avisos de validação
+            - manual_actions: Lista de ações manuais necessárias
+            - arqcor_form_id: ID do formulário ARQCOR gerado
+            - summary: Resumo legível da validação
 
     Example:
         >>> result = await validate_feito_conferido("PDI-12345", "João Silva", tool_context)
         >>> print(result["overall_status"])
         "APPROVED"
         >>> print(result["summary"])
-        "✅ Status: APPROVED\n\n✅ All 4 validation stages completed successfully"
+        "✅ Status: APPROVED\n\n✅ Todas as 4 etapas de validação concluídas com sucesso"
     """
     stages_completed = []
     errors = []
@@ -90,16 +88,13 @@ async def validate_feito_conferido(
     manual_actions = []
     overall_status = "APPROVED"
     
-    # Initialize validation tracking
     tool_context.state[f"validation_{ticket_id}"] = {
-        "started_at": datetime.utcnow().isoformat(),
+        "started_at": datetime.now(timezone.utc).isoformat(),
         "evaluator": evaluator_name,
         "mode": "mock" if USE_MOCK else "production"
     }
     
-    # Stage 1: Ticket and Component Validation
     try:
-        # Get ticket information
         ticket_info = await get_jira_ticket(ticket_id, tool_context)
         
         if "error" in ticket_info:
@@ -110,14 +105,12 @@ async def validate_feito_conferido(
                 errors, warnings, manual_actions
             )
         
-        # Validate PDI components if it's a PDI ticket
         if ticket_id.startswith("PDI-"):
             pdi_validation = await validate_pdi_components(ticket_id, tool_context)
             
             if not pdi_validation.get("is_valid", False):
                 warnings.extend(pdi_validation.get("warnings", []))
                 
-                # Check for critical errors
                 if any("status" in w and ("done" in w.lower() or "concluído" in w.lower()) 
                       for w in pdi_validation.get("warnings", [])):
                     errors.append("Stage 1: PDI has completed status - cannot proceed")
@@ -127,7 +120,6 @@ async def validate_feito_conferido(
                         errors, warnings, manual_actions
                     )
         
-        # Validate components against VT
         components = ticket_info.get("components", [])
         
         if not components:
@@ -138,7 +130,6 @@ async def validate_feito_conferido(
                 errors, warnings, manual_actions
             )
         
-        # Validate components in VT
         vt_validation = await validate_components_in_vt(ticket_id, components, tool_context)
         
         if "error" in vt_validation:
@@ -170,7 +161,6 @@ async def validate_feito_conferido(
             errors, warnings, manual_actions
         )
     
-    # Stage 2: ARQCOR Form Creation
     try:
         arqcor_result = await create_arqcor_form(ticket_id, evaluator_name, tool_context)
         
@@ -193,19 +183,14 @@ async def validate_feito_conferido(
             errors, warnings, manual_actions
         )
     
-    # Stage 3: Version Check
     try:
-        # Prepare components with versions
         components_with_versions = []
         for comp_name in components:
-            # In production, this would fetch real versions
-            # Mock mode will provide simulated versions
             components_with_versions.append({
                 "name": comp_name,
-                "version": "1.0.0"  # Placeholder - real version would come from check
+                "version": "1.0.0"
             })
         
-        # Check versions
         version_check = await check_multiple_component_versions(
             components_with_versions, 
             tool_context
@@ -214,7 +199,6 @@ async def validate_feito_conferido(
         if "error" in version_check:
             warnings.append(f"Stage 3: {version_check['error']}")
         else:
-            # Update ARQCOR form with version info
             if arqcor_form_id is not None:
                 update_result = await update_arqcor_form_with_versions(
                     arqcor_form_id,
@@ -226,14 +210,12 @@ async def validate_feito_conferido(
             else:
                 warnings.append("Stage 3: ARQCOR form ID is missing, cannot update with versions")
             
-            # Check for major version changes
             major_changes = version_check.get("major_changes", [])
             if major_changes:
                 warnings.append(
                     f"Stage 3: Major version changes detected for: {', '.join(major_changes)}"
                 )
             
-            # Check for components with errors
             error_components = version_check.get("components_with_errors", [])
             if error_components:
                 warnings.append(
@@ -249,12 +231,9 @@ async def validate_feito_conferido(
         warnings.append(f"Stage 3: Unexpected error - {str(e)}")
         manual_actions.append("Manual version verification required")
     
-    # Stage 4: Code/Contract Validation
     try:
-        # Prepare validation checklist
         checklist_items = []
         
-        # Check for API Gateway components
         api_gateway_components = [c for c in components if c.endswith("-gateway")]
         
         if api_gateway_components:
@@ -268,7 +247,6 @@ async def validate_feito_conferido(
                 "notes": "Manual verification required for API Gateway endpoints"
             })
         
-        # Code validation checks
         checklist_items.extend([
             {
                 "item": "Dependencies validation",
@@ -288,7 +266,6 @@ async def validate_feito_conferido(
             }
         ])
         
-        # Add checklist to ARQCOR form only if arqcor_form_id is not None
         if arqcor_form_id is not None:
             checklist_result = await add_validation_checklist_to_form(
                 arqcor_form_id,
@@ -307,7 +284,6 @@ async def validate_feito_conferido(
         warnings.append(f"Stage 4: Unexpected error - {str(e)}")
         manual_actions.append("Manual code and contract validation required")
     
-    # Determine final status
     if errors:
         overall_status = "FAILED"
     elif manual_actions:
@@ -315,7 +291,6 @@ async def validate_feito_conferido(
     else:
         overall_status = "APPROVED"
     
-    # Build final response
     response = _format_validation_response(
         ticket_id, overall_status, stages_completed,
         errors, warnings, manual_actions, arqcor_form_id
@@ -333,36 +308,34 @@ def _format_validation_response(
     manual_actions: List[str],
     arqcor_form_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Formats the validation response with all results.
+    """Formata a resposta de validação com todos os resultados.
 
-    Internal helper function to create consistent response format
-    for validation results.
+    Função auxiliar interna para criar formato de resposta consistente
+    para resultados de validação.
 
     Args:
-        ticket_id: Validated ticket ID.
-        overall_status: Final validation status.
-        stages_completed: List of completed stages.
-        errors: List of errors encountered.
-        warnings: List of warnings.
-        manual_actions: List of manual actions required.
-        arqcor_form_id: Generated ARQCOR form ID if available.
+        ticket_id: ID do ticket validado.
+        overall_status: Status final da validação.
+        stages_completed: Lista de etapas concluídas.
+        errors: Lista de erros encontrados.
+        warnings: Lista de avisos.
+        manual_actions: Lista de ações manuais necessárias.
+        arqcor_form_id: ID do formulário ARQCOR gerado, se disponível.
 
     Returns:
-        Formatted validation response dictionary.
+        Dicionário de resposta de validação formatado.
     """
-    # Format summary
     summary = format_validation_result(overall_status, errors, warnings, manual_actions)
     
-    # Add stage completion info
     total_stages = 4
     completed_count = len(stages_completed)
     
     if completed_count < total_stages:
-        summary += f"\n\n📊 Stages completed: {completed_count}/{total_stages}"
+        summary += f"\n\n📊 Etapas concluídas: {completed_count}/{total_stages}"
         if stages_completed:
             summary += f"\n✓ {', '.join(stages_completed)}"
     else:
-        summary += f"\n\n✅ All {total_stages} validation stages completed successfully"
+        summary += f"\n\n✅ Todas as {total_stages} etapas de validação concluídas com sucesso"
     
     response = {
         "ticket_id": ticket_id,
@@ -388,28 +361,28 @@ async def validate_code_repository(
     tool_context: ToolContext,
     access_token: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Validates a component's source code repository.
+    """Valida o repositório de código-fonte de um componente.
 
-    Performs comprehensive validation including repository structure,
-    dependencies, configuration files, and OpenAPI specifications.
-    Supports both Git and Bitbucket repositories.
+    Executa validação abrangente incluindo estrutura do repositório,
+    dependências, arquivos de configuração e especificações OpenAPI.
+    Suporta repositórios Git e Bitbucket.
 
     Args:
-        repository_url: URL of the Git repository.
-        component_name: Name of the component.
-        tool_context: ADK tool context.
-        access_token: Optional access token for private repositories.
+        repository_url: URL do repositório Git.
+        component_name: Nome do componente.
+        tool_context: Contexto da ferramenta ADK.
+        access_token: Token de acesso opcional para repositórios privados.
 
     Returns:
-        Dictionary containing:
-            - component: Component name
-            - repository_url: Repository URL
-            - has_openapi: Boolean indicating if OpenAPI spec exists
-            - dependencies_valid: Boolean for dependency validation
-            - structure_valid: Boolean for project structure
-            - issues: List of issues found
-            - repository_info: Additional repo metadata (if available)
-            - error: Error message if validation failed
+        Dicionário contendo:
+            - component: Nome do componente
+            - repository_url: URL do repositório
+            - has_openapi: Boolean indicando se especificação OpenAPI existe
+            - dependencies_valid: Boolean para validação de dependências
+            - structure_valid: Boolean para estrutura do projeto
+            - issues: Lista de problemas encontrados
+            - repository_info: Metadados adicionais do repositório (se disponível)
+            - error: Mensagem de erro se a validação falhou
 
     Example:
         >>> result = await validate_code_repository(
@@ -434,10 +407,8 @@ async def validate_code_repository(
     repository_info = {}
     
     try:
-        # Check if it's a Bitbucket repository
         is_bitbucket = "bitbucket.org" in repository_url
         
-        # Get repository information if Bitbucket
         if is_bitbucket:
             repo_info = await get_repository_info(
                 repository_url,
@@ -463,7 +434,6 @@ async def validate_code_repository(
                 "is_private": repo_info.get("is_private", False)
             }
             
-            # Get tags to check for releases
             tags_info = await list_repository_tags(
                 repository_url,
                 access_token,
@@ -479,7 +449,6 @@ async def validate_code_repository(
         else:
             repository_info = {"provider": "git"}
         
-        # Clone repository for analysis
         clone_result = await clone_repository(
             repository_url,
             repository_info.get("default_branch", "main"),
@@ -501,7 +470,6 @@ async def validate_code_repository(
         repo_path = clone_result["path"]
         
         try:
-            # Analyze project structure
             structure_result = await analyze_project_structure(repo_path, tool_context)
             
             structure_valid = structure_result.get("structure_valid", False)
@@ -514,7 +482,6 @@ async def validate_code_repository(
             repository_info["build_system"] = structure_result.get("build_system", "unknown")
             repository_info["detected_files"] = structure_result.get("detected_files", [])
             
-            # Validate dependencies
             deps_result = await validate_dependencies(repo_path, tool_context)
             
             dependencies_valid = deps_result.get("dependencies_valid", True)
@@ -528,7 +495,6 @@ async def validate_code_repository(
                 dependencies_valid = False
                 issues.extend([f"Security issue: {issue}" for issue in security_issues])
             
-            # Check for OpenAPI specification
             openapi_result = await find_openapi_spec(repo_path, tool_context)
             
             has_openapi = openapi_result.get("has_openapi", False)
@@ -543,17 +509,14 @@ async def validate_code_repository(
                 if validation_errors:
                     issues.extend([f"OpenAPI validation: {error}" for error in validation_errors])
             else:
-                # Only add as issue for Spring Boot services
                 if component_name.startswith("sboot-") or repository_info.get("project_type") == "java":
                     issues.append("OpenAPI specification not found")
             
-            # Additional validations based on component type
             if component_name.endswith("-gateway"):
                 if not has_openapi:
                     issues.append("API Gateway components must have OpenAPI specification")
                     dependencies_valid = False
             
-            # Check for configuration files
             config_files = ["Dockerfile", "docker-compose.yml", ".gitlab-ci.yml", "Jenkinsfile"]
             found_configs = [f for f in config_files if f in repository_info.get("detected_files", [])]
             
@@ -561,7 +524,6 @@ async def validate_code_repository(
                 issues.append("No CI/CD configuration files found (Dockerfile, Jenkinsfile, etc.)")
             
         finally:
-            # Cleanup cloned repository
             await cleanup_repository(repo_path, tool_context)
         
         return {
