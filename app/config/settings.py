@@ -17,11 +17,15 @@ class JiraSettings(BaseSettings):
     """
 
     base_url: str = Field(
-        default_factory=lambda: os.getenv("JIRA_BASE_URL", "https://jira.bvnet.bv"),
+        default="https://jira.bvnet.bv",
         description="Jira instance base URL"
     )
     timeout: int = Field(default=30, description="Request timeout in seconds")
-    
+    access_token: str = Field(
+        default="",
+        description="Jira API access token"
+    )
+
     # Custom fields mapping
     components_field: str = Field(default="customfield_12803", description="Components field ID")
     description_field: str = Field(default="customfield_14810", description="PDI description field")
@@ -50,8 +54,11 @@ class VTSettings(BaseSettings):
     Manages connection to VT API and BlizzDesign integration.
     """
 
-    base_url: str = Field(..., description="VT API base URL")
-    api_key: str = Field(..., description="API key for authentication")
+    base_url: str = Field(
+        default="https://tenant.bizzdesign.com",
+        description="VT API base URL"
+    )
+    api_key: str = Field(default="", description="API key for authentication")
     timeout: int = Field(default=30, description="Request timeout in seconds")
     cache_ttl: int = Field(default=3600, description="Cache TTL in seconds")
 
@@ -113,9 +120,9 @@ class ARQCORSettings(BaseSettings):
     Manages OAuth2 authentication and form creation in ARQCOR.
     """
 
-    base_url: str = Field(..., description="ARQCOR API base URL")
-    client_id: str = Field(..., description="OAuth2 client ID")
-    client_secret: str = Field(..., description="OAuth2 client secret")
+    base_url: str = Field(default="", description="ARQCOR API base URL")
+    client_id: str = Field(default="", description="OAuth2 client ID")
+    client_secret: str = Field(default="", description="OAuth2 client secret")
     timeout: int = Field(default=45, description="Request timeout in seconds")
     form_template_id: str = Field(
         default="FEITO_CONFERIDO_V2",
@@ -155,12 +162,6 @@ class Settings(BaseSettings):
     app_name: str = Field(default="feito-conferido-agent", description="Application name")
     environment: str = Field(default="development", description="Environment name")
     log_level: str = Field(default="INFO", description="Logging level")
-    
-    # Sub-settings
-    jira: JiraSettings = Field(default_factory=JiraSettings) # type: ignore
-    vt: VTSettings = Field(default_factory=VTSettings) # type: ignore
-    portal_tech: PortalTechSettings = Field(default_factory=PortalTechSettings) # type: ignore
-    arqcor: ARQCORSettings = Field(default_factory=ARQCORSettings) # type: ignore
 
     @field_validator("environment")
     @classmethod
@@ -181,8 +182,64 @@ class Settings(BaseSettings):
             raise ValueError(f"Environment must be one of: {valid_envs}")
         return v.lower()
 
+    @property
+    def jira(self) -> JiraSettings:
+        """Gets Jira configuration settings.
+        
+        Returns:
+            JiraSettings instance with all Jira-related configuration.
+            
+        Note:
+            Using property ensures proper type inference and lazy loading.
+        """
+        if not hasattr(self, '_jira'):
+            self._jira = JiraSettings()
+        return self._jira
 
-# Singleton instance
+    @property
+    def vt(self) -> VTSettings:
+        """Gets VT configuration settings.
+        
+        Returns:
+            VTSettings instance with all VT-related configuration.
+            
+        Note:
+            Using property ensures proper type inference and lazy loading.
+        """
+        if not hasattr(self, '_vt'):
+            self._vt = VTSettings()
+        return self._vt
+
+    @property
+    def portal_tech(self) -> PortalTechSettings:
+        """Gets Portal Tech configuration settings.
+        
+        Returns:
+            PortalTechSettings instance with all Portal Tech configuration.
+            
+        Note:
+            Using property ensures proper type inference and lazy loading.
+        """
+        if not hasattr(self, '_portal_tech'):
+            self._portal_tech = PortalTechSettings()
+        return self._portal_tech
+
+    @property
+    def arqcor(self) -> ARQCORSettings:
+        """Gets ARQCOR configuration settings.
+        
+        Returns:
+            ARQCORSettings instance with all ARQCOR configuration.
+            
+        Note:
+            Using property ensures proper type inference and lazy loading.
+        """
+        if not hasattr(self, '_arqcor'):
+            self._arqcor = ARQCORSettings()
+        return self._arqcor
+
+
+# Singleton instance with explicit typing
 _settings: Optional[Settings] = None
 
 
@@ -191,12 +248,43 @@ def get_settings() -> Settings:
 
     Returns:
         Settings instance with all configuration loaded.
+        
+    Note:
+        This function ensures proper type inference by maintaining
+        a strongly typed singleton pattern. Each sub-setting is
+        accessed via properties with explicit return types.
 
     Example:
         >>> settings = get_settings()
-        >>> print(settings.jira.base_url)
+        >>> jira_settings = settings.jira  # Type: JiraSettings
+        >>> print(jira_settings.base_url)  # Full IntelliSense support
+        >>> vt_settings = settings.vt      # Type: VTSettings  
+        >>> print(vt_settings.api_key)     # Full IntelliSense support
     """
     global _settings
     if _settings is None:
         _settings = Settings()
     return _settings
+
+
+def reset_settings() -> None:
+    """Resets the settings singleton.
+    
+    Useful for testing and configuration reloading scenarios.
+    Forces recreation of settings on next get_settings() call.
+    
+    Also clears any cached sub-settings to ensure fresh configuration
+    loading on the next access.
+    """
+    global _settings
+    if _settings is not None:
+        # Clear cached sub-settings
+        if hasattr(_settings, '_jira'):
+            delattr(_settings, '_jira')
+        if hasattr(_settings, '_vt'):
+            delattr(_settings, '_vt')
+        if hasattr(_settings, '_portal_tech'):
+            delattr(_settings, '_portal_tech')
+        if hasattr(_settings, '_arqcor'):
+            delattr(_settings, '_arqcor')
+    _settings = None
