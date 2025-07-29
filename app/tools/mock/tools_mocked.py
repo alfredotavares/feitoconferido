@@ -8,7 +8,7 @@ ESTA VERSÃO CONTÉM RESPOSTAS MOCKADAS PARA TESTES!
 
 from typing import Dict, List, Any, Optional
 from google.adk.tools import ToolContext
-from datetime import datetime
+from datetime import datetime, timezone
 import random
 
 
@@ -638,7 +638,7 @@ async def create_arqcor_form(
     # Armazena no contexto
     tool_context.state[f"arqcor_form_{ticket_id}"] = {
         "form_id": form_id,
-        "created_at": datetime.utcnow().isoformat()
+        "created_at": datetime.now(timezone.utc).isoformat()
     }
     
     return {

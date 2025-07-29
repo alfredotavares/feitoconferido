@@ -5,7 +5,7 @@ Evaluation forms in the ARQCOR system through Jira API.
 """
 
 from typing import Dict, List, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from google.adk.tools import ToolContext
 
 from ..utils.http_clients import get_jira_client
@@ -83,7 +83,7 @@ async def create_arqcor_form(
                 "customfield_arquiteto_responsavel": evaluator_name,  # Architect responsible
                 "customfield_escopo_validacao": validation_scope,     # Validation scope
                 "customfield_ticket_origem": ticket_id,              # Source ticket
-                "customfield_data_avaliacao": datetime.utcnow().strftime("%Y-%m-%d"),
+                "customfield_data_avaliacao": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
                 "customfield_status_formulario": "Draft"             # Form status
             }
         }
@@ -98,7 +98,7 @@ async def create_arqcor_form(
         # Store form ID in context for later operations
         tool_context.state[f"arqcor_form_{ticket_id}"] = {
             "form_id": form_id,
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "status": "Draft"
         }
         
@@ -335,7 +335,7 @@ async def submit_arqcor_form(form_id: str, tool_context: ToolContext) -> Dict[st
         update_data = {
             "fields": {
                 "customfield_status_formulario": "Em Avaliação",
-                "customfield_data_submissao": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+                "customfield_data_submissao": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
             }
         }
         

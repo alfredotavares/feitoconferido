@@ -5,7 +5,7 @@ e padronização de apresentação de dados.
 """
 
 from typing import Dict, List, Any, Optional, Tuple
-from datetime import datetime
+from datetime import datetime, timezone
 import re
 
 
@@ -170,7 +170,7 @@ def format_timestamp(dt: Optional[datetime] = None) -> str:
         '2024-01-15 10:30:00'
     """
     if dt is None:
-        dt = datetime.utcnow()
+        dt = datetime.now(timezone.utc)
     
     return dt.strftime("%Y-%m-%d %H:%M:%S")
 

@@ -5,7 +5,7 @@ autenticação apropriada, timeouts e estratégias de retry.
 """
 
 import base64
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 from typing import Optional, Dict, Any
 import httpx
@@ -303,7 +303,7 @@ class ARQCORClient(BaseHTTPClient):
         """
         if self._access_token and self._token_expires_at:
             # Verifica se token ainda é válido
-            if datetime.utcnow() < self._token_expires_at:
+            if datetime.now(timezone.utc) < self._token_expires_at:
                 return
         
         # Token expirado ou não presente, renova
@@ -338,7 +338,7 @@ class ARQCORClient(BaseHTTPClient):
         expires_in = token_data.get("expires_in", 3600)  # Default 1 hora
         
         # Define expiração com buffer de 60 segundos para renovação antecipada
-        self._token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in - 60)
+        self._token_expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in - 60)
 
     async def request(self, method: str, endpoint: str, **kwargs) -> httpx.Response:
         """Faz uma requisição autenticada para o ARQCOR.
