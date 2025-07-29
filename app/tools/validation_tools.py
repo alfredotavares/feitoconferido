@@ -27,22 +27,22 @@ if USE_MOCK:
 else:
     # Import real tools for production
     from ..utils.formatters import format_validation_result
-    from .jira_tools import get_jira_ticket, validate_pdi_components
-    from .vt_tools import validate_components_in_vt
-    from .component_tools import check_multiple_component_versions
-    from .arqcor_tools import (
+    from .integrations.jira import get_jira_ticket, validate_pdi_components
+    from .integrations.blizzdesign import validate_components_in_vt
+    from .integrations.portal_tech import check_multiple_component_versions
+    from .integrations.arqcor import (
         create_arqcor_form, 
         update_arqcor_form_with_versions,
         add_validation_checklist_to_form
     )
-    from .git_tools import (
+    from .integrations.git import (
         clone_repository,
         analyze_project_structure,
         validate_dependencies,
         find_openapi_spec,
         cleanup_repository
     )
-    from .bitbucket_tools import (
+    from .integrations.bitbucket import (
         get_repository_info,
         list_repository_tags
     )

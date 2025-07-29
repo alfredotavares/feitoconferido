@@ -7,9 +7,9 @@ extract components, and update ticket information.
 from typing import Dict, List, Any, Optional
 from google.adk.tools import ToolContext
 
-from ..utils.http_clients import get_jira_client
-from ..utils.formatters import parse_jira_components, parse_development_cycle
-from ..config.settings import get_settings
+from ...utils.http_clients import get_jira_client
+from ...utils.formatters import parse_jira_components, parse_development_cycle
+from ...config.settings import get_settings
 
 
 async def get_jira_ticket(ticket_id: str, tool_context: ToolContext) -> Dict[str, Any]:

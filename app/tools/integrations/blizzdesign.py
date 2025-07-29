@@ -10,9 +10,9 @@ import json
 import re
 from google.adk.tools import ToolContext
 
-from ..utils.http_clients import get_vt_client
-from ..utils.formatters import extract_blizzdesign_components
-from ..config.settings import get_settings
+from ...utils.http_clients import get_vt_client
+from ...utils.formatters import extract_blizzdesign_components
+from ...config.settings import get_settings
 
 
 async def get_technical_vision_by_ticket(ticket_id: str, tool_context: ToolContext) -> Dict[str, Any]:

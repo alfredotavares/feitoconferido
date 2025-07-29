@@ -7,9 +7,9 @@ production versions and compare with deployment versions.
 from typing import Dict, List, Any, Optional
 from google.adk.tools import ToolContext
 
-from ..utils.http_clients import get_portal_tech_client
-from ..utils.formatters import compare_versions
-from ..config.settings import get_settings
+from ...utils.http_clients import get_portal_tech_client
+from ...utils.formatters import compare_versions
+from ...config.settings import get_settings
 
 
 async def get_production_version(component_name: str, tool_context: ToolContext) -> Dict[str, Any]:
