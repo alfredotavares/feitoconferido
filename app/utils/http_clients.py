@@ -134,11 +134,8 @@ class JiraClient(BaseHTTPClient):
         """Initializes Jira client with settings from configuration."""
         settings = get_settings().jira
         
-        # Setup Bearer Auth
-        jira_access_token = os.getenv("JIRA_ACCESS_TOKEN")
-        
         headers = {
-            "Authorization": f"Bearer {jira_access_token}",
+            "Authorization": f"Bearer {settings.access_token}",
             "Accept": "application/json",
             "Content-Type": "application/json"
         }
