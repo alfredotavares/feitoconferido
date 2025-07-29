@@ -4,7 +4,7 @@ Provides tools for interacting with Technical Vision (VT) and
 BlizzDesign to validate approved components and architectures.
 """
 
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional
 from pathlib import Path
 import json
 import re

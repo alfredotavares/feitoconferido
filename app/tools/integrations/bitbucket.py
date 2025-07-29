@@ -5,10 +5,8 @@ information, tags, branches, and pull request data.
 """
 
 import aiohttp
-import base64
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any, Optional
 from urllib.parse import urlparse
-import json
 
 from google.adk.tools import ToolContext
 

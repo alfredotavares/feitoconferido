@@ -4,7 +4,7 @@ Provides tools for interacting with Jira to fetch tickets,
 extract components, and update ticket information.
 """
 
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any
 from google.adk.tools import ToolContext
 
 from ...utils.http_clients import get_jira_client

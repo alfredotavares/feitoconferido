@@ -8,8 +8,8 @@ import asyncio
 import tempfile
 import shutil
 from pathlib import Path
-from typing import Dict, List, Any, Optional
-from urllib.parse import urlparse, quote
+from typing import Dict, List, Any
+from urllib.parse import urlparse
 import re
 
 from google.adk.tools import ToolContext
