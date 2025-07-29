@@ -1,0 +1,396 @@
+class FluxoGuiadoValidacaoADK:
+    """
+    Classe para gerenciar fluxo guiado sequencial de validação de componentes ADK.
+    Conduz o usuário de forma interativa, coletando um componente por vez.
+    """
+    
+    def __init__(self):
+        self.componentes_coletados = []
+        self.estado_atual = "inicial"
+        self.componente_temporario = {}
+        self.sessao_id = None
+        
+    def iniciar_fluxo(self, sessao_id=None):
+        """
+        Inicia o fluxo guiado de coleta de componentes.
+        """
+        from datetime import datetime
+        
+        self.sessao_id = sessao_id or f"sessao_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        self.estado_atual = "aguardando_nome"
+        self.componentes_coletados = []
+        self.componente_temporario = {}
+        
+        audit_logger.log_data_access("system", "fluxo_guiado_inicio", "success", self.sessao_id)
+        
+        return {
+            "status": "iniciado",
+            "sessao_id": self.sessao_id,
+            "mensagem": "Bem-vindo ao fluxo guiado de validação de componentes ADK.\n\nPor favor, informe o nome do primeiro componente que deseja validar:",
+            "estado": self.estado_atual,
+            "componentes_registrados": len(self.componentes_coletados)
+        }
+    
+    def processar_entrada(self, entrada_usuario):
+        """
+        Processa a entrada do usuário baseada no estado atual do fluxo.
+        """
+        try:
+            entrada_limpa = str(entrada_usuario).strip()
+            
+            if self.estado_atual == "aguardando_nome":
+                return self._processar_nome_componente(entrada_limpa)
+            
+            elif self.estado_atual == "aguardando_versao":
+                return self._processar_versao_componente(entrada_limpa)
+            
+            elif self.estado_atual == "aguardando_confirmacao":
+                return self._processar_confirmacao_adicionar(entrada_limpa)
+            
+            else:
+                return {
+                    "status": "erro",
+                    "mensagem": "Estado do fluxo inválido. Por favor, reinicie o processo.",
+                    "acao_sugerida": "reiniciar"
+                }
+                
+        except Exception as e:
+            audit_logger.log_data_access("system", "fluxo_guiado_erro", "error", str(e))
+            return {
+                "status": "erro",
+                "mensagem": f"Erro interno no processamento: {str(e)}",
+                "acao_sugerida": "reiniciar"
+            }
+    
+    def _processar_nome_componente(self, nome):
+        """
+        Processa o nome do componente fornecido pelo usuário.
+        """
+        if not nome:
+            return {
+                "status": "erro_validacao",
+                "mensagem": "O nome do componente não pode estar vazio.\n\nPor favor, informe o nome do componente:",
+                "estado": self.estado_atual
+            }
+        
+        if not security_validator.validate_input_length(nome):
+            return {
+                "status": "erro_validacao",
+                "mensagem": "O nome do componente é muito longo.\n\nPor favor, informe um nome mais curto:",
+                "estado": self.estado_atual
+            }
+        
+        if not self._validar_caracteres_nome(nome):
+            return {
+                "status": "erro_validacao",
+                "mensagem": "O nome do componente contém caracteres inválidos. Use apenas letras, números, hífens e underscores.\n\nPor favor, informe um nome válido:",
+                "estado": self.estado_atual
+            }
+        
+        # Nome válido, salvar e solicitar versão
+        self.componente_temporario = {"nome": nome}
+        self.estado_atual = "aguardando_versao"
+        
+        return {
+            "status": "sucesso",
+            "mensagem": f"Componente '{nome}' registrado.\n\nAgora informe a versão deste componente:",
+            "estado": self.estado_atual,
+            "componente_atual": nome
+        }
+    
+    def _processar_versao_componente(self, versao):
+        """
+        Processa a versão do componente fornecida pelo usuário.
+        """
+        if not versao:
+            return {
+                "status": "erro_validacao",
+                "mensagem": "A versão do componente não pode estar vazia.\n\nPor favor, informe a versão:",
+                "estado": self.estado_atual
+            }
+        
+        if not security_validator.validate_input_length(versao):
+            return {
+                "status": "erro_validacao",
+                "mensagem": "A versão do componente é muito longa.\n\nPor favor, informe uma versão mais curta:",
+                "estado": self.estado_atual
+            }
+        
+        if not self._validar_formato_versao(versao):
+            return {
+                "status": "erro_validacao",
+                "mensagem": "Formato de versão inválido. Use formatos como: 1.0, 1.0.0, 2.1.3-beta\n\nPor favor, informe uma versão válida:",
+                "estado": self.estado_atual
+            }
+        
+        # Versão válida, completar o componente
+        self.componente_temporario["versao"] = versao
+        self.componentes_coletados.append(self.componente_temporario.copy())
+        
+        nome_componente = self.componente_temporario["nome"]
+        self.componente_temporario = {}
+        self.estado_atual = "aguardando_confirmacao"
+        
+        return {
+            "status": "sucesso",
+            "mensagem": f"Componente '{nome_componente}' versão '{versao}' adicionado com sucesso.\n\nDeseja adicionar outro componente para análise? (sim/não):",
+            "estado": self.estado_atual,
+            "componentes_registrados": len(self.componentes_coletados),
+            "ultimo_componente": f"{nome_componente} v{versao}"
+        }
+    
+    def _processar_confirmacao_adicionar(self, resposta):
+        """
+        Processa a confirmação se o usuário quer adicionar mais componentes.
+        """
+        resposta_lower = resposta.lower()
+        
+        if resposta_lower in ["sim", "s", "yes", "y", "1", "ok"]:
+            # Usuário quer adicionar mais componentes
+            self.estado_atual = "aguardando_nome"
+            
+            return {
+                "status": "continuar",
+                "mensagem": f"Perfeito. Você já registrou {len(self.componentes_coletados)} componente(s).\n\nInforme o nome do próximo componente:",
+                "estado": self.estado_atual,
+                "componentes_registrados": len(self.componentes_coletados)
+            }
+        
+        elif resposta_lower in ["não", "nao", "n", "no", "0", "fim", "finalizar"]:
+            # Usuário quer finalizar e iniciar validação
+            return self._finalizar_coleta_e_validar()
+        
+        else:
+            # Resposta não reconhecida
+            return {
+                "status": "erro_validacao",
+                "mensagem": "Resposta não reconhecida. Por favor, responda 'sim' para adicionar outro componente ou 'não' para finalizar:",
+                "estado": self.estado_atual
+            }
+    
+    def _finalizar_coleta_e_validar(self):
+        """
+        Finaliza a coleta de componentes e inicia o processo de validação.
+        """
+        if not self.componentes_coletados:
+            return {
+                "status": "erro",
+                "mensagem": "Nenhum componente foi coletado. Reinicie o processo para adicionar componentes.",
+                "acao_sugerida": "reiniciar"
+            }
+        
+        self.estado_atual = "finalizando"
+        
+        # Preparar resumo dos componentes coletados
+        resumo_componentes = []
+        for i, comp in enumerate(self.componentes_coletados, 1):
+            resumo_componentes.append(f"{i}. {comp['nome']} - versão {comp['versao']}")
+        
+        # Executar validação
+        resultado_validacao = self._executar_validacao_completa()
+        
+        audit_logger.log_data_access("system", "fluxo_guiado_finalizacao", "success", 
+                                   f"Componentes: {len(self.componentes_coletados)}")
+        
+        return {
+            "status": "finalizado",
+            "mensagem": f"Coleta finalizada com sucesso. {len(self.componentes_coletados)} componente(s) registrado(s).",
+            "componentes_coletados": self.componentes_coletados,
+            "resumo_componentes": "\n".join(resumo_componentes),
+            "resultado_validacao": resultado_validacao,
+            "sessao_id": self.sessao_id
+        }
+    
+    def _executar_validacao_completa(self):
+        """
+        Executa a validação completa dos componentes coletados.
+        """
+        try:
+            from datetime import datetime
+            
+            resultado = ["=== VALIDACAO DE COMPONENTES COLETADOS VIA FLUXO GUIADO ==="]
+            resultado.append(f"Sessão: {self.sessao_id}")
+            resultado.append(f"Data/Hora: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+            resultado.append(f"Total de componentes: {len(self.componentes_coletados)}")
+            resultado.append("")
+            
+            componentes_validos = []
+            componentes_com_erro = 0
+            
+            for i, comp in enumerate(self.componentes_coletados, 1):
+                nome = comp["nome"]
+                versao = comp["versao"]
+                
+                resultado.append(f"{i}. Validando: {nome} v{versao}")
+                
+                # Executar validações específicas
+                existe_repositorio = self._verificar_existencia_componente(nome, versao)
+                compativel_arquitetura = self._verificar_compatibilidade_arquitetura(nome, versao)
+                dependencias_ok = self._verificar_dependencias_componente(nome, versao)
+                
+                if existe_repositorio and compativel_arquitetura and dependencias_ok:
+                    resultado.append(f"   SUCESSO: Todas as validações passaram")
+                    componentes_validos.append(comp)
+                else:
+                    componentes_com_erro += 1
+                    problemas = []
+                    if not existe_repositorio:
+                        problemas.append("não encontrado no repositório")
+                    if not compativel_arquitetura:
+                        problemas.append("incompatível com arquitetura")
+                    if not dependencias_ok:
+                        problemas.append("dependências não atendidas")
+                    
+                    resultado.append(f"   FALHA: {', '.join(problemas)}")
+                
+                resultado.append("")
+            
+            # Resumo final
+            resultado.append("=== RESUMO FINAL ===")
+            resultado.append(f"Componentes processados: {len(self.componentes_coletados)}")
+            resultado.append(f"Componentes válidos: {len(componentes_validos)}")
+            resultado.append(f"Componentes com erro: {componentes_com_erro}")
+            
+            status_final = "success" if componentes_com_erro == 0 else ("partial_success" if len(componentes_validos) > 0 else "error")
+            
+            return {
+                "status": status_final,
+                "detalhes": "\n".join(resultado),
+                "componentes_validos": componentes_validos,
+                "componentes_com_erro": componentes_com_erro,
+                "total_processados": len(self.componentes_coletados)
+            }
+            
+        except Exception as e:
+            return {
+                "status": "error",
+                "detalhes": f"Erro durante validação: {str(e)}",
+                "componentes_validos": [],
+                "componentes_com_erro": len(self.componentes_coletados),
+                "total_processados": len(self.componentes_coletados)
+            }
+    
+    def _validar_caracteres_nome(self, nome):
+        """
+        Valida se o nome do componente contém apenas caracteres permitidos.
+        """
+        import re
+        pattern = r'^[a-zA-Z0-9_-]+$'
+        return re.match(pattern, nome) is not None
+    
+    def _validar_formato_versao(self, versao):
+        """
+        Valida se a versão está em formato válido.
+        """
+        import re
+        pattern = r'^\d+\.\d+(\.\d+)?(-[a-zA-Z0-9]+)?$'
+        return re.match(pattern, versao) is not None
+    
+    def _verificar_existencia_componente(self, nome, versao):
+        """
+        Verifica se o componente existe no repositório.
+        """
+        # Implementação específica do seu sistema
+        # Por enquanto, retorna True como placeholder
+        return True
+    
+    def _verificar_compatibilidade_arquitetura(self, nome, versao):
+        """
+        Verifica compatibilidade com a arquitetura.
+        """
+        # Implementação específica do seu sistema
+        # Por enquanto, retorna True como placeholder
+        return True
+    
+    def _verificar_dependencias_componente(self, nome, versao):
+        """
+        Verifica dependências do componente.
+        """
+        # Implementação específica do seu sistema
+        # Por enquanto, retorna True como placeholder
+        return True
+    
+    def obter_status_atual(self):
+        """
+        Retorna o status atual do fluxo.
+        """
+        return {
+            "estado": self.estado_atual,
+            "componentes_registrados": len(self.componentes_coletados),
+            "componente_temporario": self.componente_temporario,
+            "sessao_id": self.sessao_id
+        }
+    
+    def reiniciar_fluxo(self):
+        """
+        Reinicia o fluxo guiado.
+        """
+        self.componentes_coletados = []
+        self.estado_atual = "inicial"
+        self.componente_temporario = {}
+        
+        return self.iniciar_fluxo()
+
+
+# Exemplo de uso da classe
+def exemplo_uso_fluxo_guiado():
+    """
+    Exemplo de como usar o fluxo guiado sequencial.
+    """
+    fluxo = FluxoGuiadoValidacaoADK()
+    
+    # Iniciar o fluxo
+    resposta = fluxo.iniciar_fluxo()
+    print(resposta["mensagem"])
+    
+    # Simular interações do usuário
+    interacoes = [
+        "componente-auth",      # Nome do primeiro componente
+        "2.1.0",               # Versão do primeiro componente
+        "sim",                 # Quer adicionar outro
+        "componente-database", # Nome do segundo componente
+        "1.5.2",              # Versão do segundo componente
+        "não"                 # Não quer adicionar mais
+    ]
+    
+    for entrada in interacoes:
+        resposta = fluxo.processar_entrada(entrada)
+        print(f"\nEntrada: {entrada}")
+        print(f"Resposta: {resposta['mensagem']}")
+        
+        if resposta["status"] == "finalizado":
+            print("\n=== VALIDAÇÃO COMPLETA ===")
+            print(resposta["resultado_validacao"]["detalhes"])
+            break
+
+
+# Função de conveniência para integração com ADK
+def iniciar_fluxo_guiado_adk():
+    """
+    Função de conveniência para iniciar o fluxo guiado.
+    Pode ser registrada como ferramenta no sistema ADK.
+    """
+    fluxo = FluxoGuiadoValidacaoADK()
+    return fluxo.iniciar_fluxo()
+
+
+# Gerenciador global de sessões ativas (para ambiente multi-usuário)
+class GerenciadorSessoesFluxo:
+    def __init__(self):
+        self.sessoes_ativas = {}
+    
+    def obter_ou_criar_sessao(self, usuario_id):
+        if usuario_id not in self.sessoes_ativas:
+            self.sessoes_ativas[usuario_id] = FluxoGuiadoValidacaoADK()
+        return self.sessoes_ativas[usuario_id]
+    
+    def remover_sessao(self, usuario_id):
+        if usuario_id in self.sessoes_ativas:
+            del self.sessoes_ativas[usuario_id]
+    
+    def listar_sessoes_ativas(self):
+        return list(self.sessoes_ativas.keys())
+
+
+# Instância global do gerenciador
+gerenciador_sessoes = GerenciadorSessoesFluxo()
