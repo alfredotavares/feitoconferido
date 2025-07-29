@@ -1,9 +1,0 @@
-CRITÉRIOS ETL CONFIABILIDADE
-==================================================
-Gerado automaticamente baseado na análise da base de dados
-
-1. CONFIABILIDADE ETL:
-   Score mínimo: 85%
-   Score atual: 85%
-   Criticidade: ALTA
-

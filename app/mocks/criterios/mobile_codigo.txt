@@ -1,9 +1,0 @@
-CRITÉRIOS MOBILE CODIGO
-==================================================
-Gerado automaticamente baseado na análise da base de dados
-
-1. QUALIDADE CÓDIGO MOBILE:
-   Score mínimo: 80%
-   Score atual: 85%
-   Criticidade: ALTA
-
