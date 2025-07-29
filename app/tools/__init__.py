@@ -44,12 +44,6 @@ from .integrations.arqcor import (
     add_validation_checklist_to_form
 )
 
-# Main validation tools
-from .validation_tools import (
-    validate_feito_conferido,
-    validate_code_repository
-)
-
 # Git tools
 from .integrations.git import (
     clone_repository,
@@ -102,10 +96,6 @@ __all__ = [
     "submit_arqcor_form",
     "get_arqcor_form_status",
     "add_validation_checklist_to_form",
-    
-    # Main validation tools
-    "validate_feito_conferido",
-    "validate_code_repository",
     
     # Git tools
     "clone_repository",
