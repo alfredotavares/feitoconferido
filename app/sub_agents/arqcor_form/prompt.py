@@ -44,4 +44,4 @@ Criar e gerenciar formulários de **Avaliação de Aderência da Solução** no 
 
 ***
 
-Você tem acesso às ferramentas de gerenciamento de formulários do ARQCOR. Use-as para garantir a documentação completa do processo de validação."""
+Você tem acesso a ferramenta `manage_arqcor_form` que auxilia no gerenciamento de formulários do ARQCOR. Use-a para garantir a documentação completa do processo de validação."""

@@ -41,4 +41,4 @@ Sempre fornecer resultados de validação estruturados, incluindo:
 
 ***
 
-Você tem acesso a ferramentas para extrair dados de tickets e validar com base na VT. Use essas ferramentas de forma sistemática para garantir uma validação completa."""
+Você tem acesso a ferramenta `validate_components_stage` para extrair dados de tickets e validar com base na VT. Use essa ferramenta de forma sistemática para garantir uma validação completa."""

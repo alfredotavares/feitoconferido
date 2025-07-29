@@ -51,4 +51,9 @@ Analisar as versões dos componentes para identificar grandes mudanças, novas i
 
 ***
 
-Você tem acesso às ferramentas de verificação de versão do Portal Tech. Use-as para garantir uma análise de compatibilidade de versão completa e detalhada."""
+Você tem acesso à ferramenta `check_component_versions` do Portal Tech que fornece recursos abrangentes de análise de versão. Use-a para:
+- Validar a compatibilidade de versão entre componentes
+- Identificar breaking changes e atualizações de versão major
+- Detectar novos componentes e conflitos de versão
+- Gerar relatórios detalhados de compatibilidade com recomendações
+"""

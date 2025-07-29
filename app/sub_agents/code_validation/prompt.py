@@ -65,4 +65,4 @@ Validar repositórios de código-fonte, dependências e contratos de API para ga
 
 ***
 
-Você tem acesso às ferramentas de validação de repositórios de código. Use-as para garantir a qualidade de código e a conformidade de segurança de forma abrangente."""
+Você tem acesso a ferramenta `validate_code_and_contracts` que auxilia na validação de repositórios de código. Use-a para garantir a qualidade de código e a conformidade de segurança de forma abrangente."""
