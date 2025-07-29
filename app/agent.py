@@ -1,26 +1,24 @@
-"""Agent configuration module for architectural compliance validation.
+"""Módulo de configuração do agente para validação de conformidade arquitetural.
 
-This module defines the main agent responsible for validating architectural
-adherence using Google ADK (Agent Development Kit).
+Este módulo define o agente principal responsável por validar a aderência
+arquitetural usando o Google ADK (Agent Development Kit).
 
-The FEITO CONFERIDO agent performs a 4-stage validation process:
+O agente FEITO CONFERIDO executa um processo de validação em 4 estágios:
 
-1. **Component Validation**: Validates that all components in the ticket
-   are approved in the Technical Vision (VT). This is a critical stage
-   that can cause immediate rejection if components are not approved.
+1. **Validação de Componentes**: Valida que todos os componentes no ticket
+   estão aprovados na Visão Técnica (VT). Este é um estágio crítico
+   que pode causar rejeição imediata se os componentes não estiverem aprovados.
 
-2. **ARQCOR Form Creation**: Creates a Solution Adherence Evaluation form
-   in the ARQCOR system to document the validation process.
+2. **Criação do Formulário ARQCOR**: Cria um formulário de Avaliação de
+   Aderência da Solução no sistema ARQCOR para documentar o processo de validação.
 
-3. **Version Checking**: Compares deployment versions with production
-   versions using Component (Portal Tech) to identify major changes or new components.
+3. **Verificação de Versões**: Compara versões de deployment com versões de
+   produção usando Component (Portal Tech) para identificar mudanças maiores
+   ou novos componentes.
 
-4. **Code/Contract Validation**: Validates repository structure, dependencies,
-   and OpenAPI contracts. Identifies manual actions needed for API Gateway
-   components.
-
-The agent implements comprehensive security protocols including input
-validation, data masking, audit logging, and rate limiting.
+4. **Validação de Código/Contrato**: Valida estrutura do repositório, dependências
+   e contratos OpenAPI. Identifica ações manuais necessárias para componentes
+   do API Gateway.
 """
 
 import os
@@ -34,21 +32,22 @@ from app.tools.validation_tools import (
 VERTEX_AI_MODEL = os.getenv("VERTEX_AI_MODEL", "gemini-2.5-flash")
 
 class AgentConfiguration:
-    """Configuration handler for the architectural compliance validation agent.
+    """Manipulador de configuração para o agente de validação de conformidade arquitetural.
     
-    This class encapsulates the configuration and initialization of the
-    FEITO CONFERIDO agent, responsible for architectural adherence validation.
+    Esta classe encapsula a configuração e inicialização do agente
+    FEITO CONFERIDO, responsável pela validação de aderência arquitetural.
     """
     
     AGENT_NAME: str = "feito_conferido_agent"
-    MODEL_NAME: str = "gemini-2.0-flash"
+    MODEL_NAME: str = VERTEX_AI_MODEL
+    AGENT_DESCRIPTION: str = "Agente responsável por validar a aderência arquitetural e gerenciar o débito técnico."
     
     @staticmethod
     def create_agent_instruction() -> str:
-        """Generate the comprehensive instruction set for the agent.
+        """Gera o conjunto completo de instruções para o agente.
         
         Returns:
-            Complete instruction prompt for the architectural compliance agent.
+            Prompt de instrução completo para o agente de conformidade arquitetural.
         """
         return """
       **Você é o Agente Feito Conferido, um assistente de IA especialista em arquitetura de software.**
@@ -138,17 +137,14 @@ Siga estas regras em TODAS as suas interações:
 
 """
 
-# ============================================================================
-# ROOT AGENT
-# ============================================================================
 
 root_agent = Agent(
-    name="feito_conferido_agent",
-    model=VERTEX_AI_MODEL, 
-    description="Expert system for architectural compliance validation and technical debt management.",
+    name=AgentConfiguration.AGENT_NAME,
+    model=AgentConfiguration.MODEL_NAME, 
+    description=AgentConfiguration.AGENT_DESCRIPTION,
     instruction=AgentConfiguration.create_agent_instruction(),
     tools=[
-        validate_feito_conferido,  # Tool principal de orquestração
-        validate_code_repository   # Tool de validação de repositório
+        validate_feito_conferido,
+        validate_code_repository
     ]
 )
