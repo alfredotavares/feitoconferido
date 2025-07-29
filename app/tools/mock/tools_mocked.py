@@ -1,9 +1,9 @@
-"""Main validation tools for Feito/Conferido process with MOCKED responses.
+"""Ferramentas principais de validação para o processo Feito/Conferido com respostas MOCKADAS.
 
-Provides the primary validation tool that orchestrates
-the complete Feito/Conferido validation workflow.
+Fornece a ferramenta de validação principal que orquestra
+o fluxo de trabalho completo de validação Feito/Conferido.
 
-THIS VERSION CONTAINS MOCKED RESPONSES FOR TESTING!
+ESTA VERSÃO CONTÉM RESPOSTAS MOCKADAS PARA TESTES!
 """
 
 from typing import Dict, List, Any, Optional
@@ -12,7 +12,7 @@ from datetime import datetime
 import random
 
 
-# ===== BLIZZDESIGN MOCK DATA =====
+# ===== DADOS MOCK DO BLIZZDESIGN =====
 BLIZZDESIGN_MOCK_EXPORTS = {
     "JT-147338": {
         "viewInfo": {
@@ -213,7 +213,7 @@ BLIZZDESIGN_MOCK_EXPORTS = {
 }
 
 
-# ===== MOCK HELPER FUNCTIONS =====
+# ===== FUNÇÕES AUXILIARES MOCK =====
 
 def format_validation_result(
     overall_status: str,
@@ -221,21 +221,42 @@ def format_validation_result(
     warnings: List[str],
     manual_actions: List[str]
 ) -> str:
-    """Mock formatter for validation results."""
+    """Formatador mock para resultados de validação.
+    
+    Cria uma apresentação estruturada dos resultados de validação
+    com emojis e formatação visual para facilitar a leitura.
+    
+    Args:
+        overall_status: Status geral da validação.
+        errors: Lista de erros encontrados.
+        warnings: Lista de avisos.
+        manual_actions: Lista de ações manuais necessárias.
+    
+    Returns:
+        String formatada com o resultado da validação.
+        
+    Example:
+        >>> result = format_validation_result("APPROVED", [], ["Versão antiga"], [])
+        >>> print(result)
+        ✅ Status: APPROVED
+        
+        ⚠️ Warnings (1):
+        - Versão antiga
+    """
     summary = f"✅ Status: {overall_status}"
     
     if errors:
-        summary += f"\n\n❌ Errors ({len(errors)}):"
+        summary += f"\n\n❌ Erros ({len(errors)}):"
         for error in errors:
             summary += f"\n- {error}"
     
     if warnings:
-        summary += f"\n\n⚠️ Warnings ({len(warnings)}):"
+        summary += f"\n\n⚠️ Avisos ({len(warnings)}):"
         for warning in warnings:
             summary += f"\n- {warning}"
     
     if manual_actions:
-        summary += f"\n\n📋 Manual Actions Required ({len(manual_actions)}):"
+        summary += f"\n\n📋 Ações Manuais Necessárias ({len(manual_actions)}):"
         for action in manual_actions:
             summary += f"\n- {action}"
     
@@ -243,10 +264,27 @@ def format_validation_result(
 
 
 def extract_blizzdesign_components(blizzdesign_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Extracts application components from BlizzDesign export."""
+    """Extrai componentes de aplicação do export do BlizzDesign.
+    
+    Filtra apenas elementos do tipo ApplicationComponent do export
+    do BlizzDesign e extrai informações relevantes.
+    
+    Args:
+        blizzdesign_data: Dados do export do BlizzDesign.
+    
+    Returns:
+        Lista de componentes com informações extraídas.
+        
+    Example:
+        >>> data = {"elements": [{"name": "user-service", "type": "ArchiMate:ApplicationComponent", "stereotype": "NOVO"}]}
+        >>> components = extract_blizzdesign_components(data)
+        >>> print(components[0]["name"])
+        'user-service'
+    """
     components = []
     
     for element in blizzdesign_data.get("elements", []):
+        # Filtra apenas componentes de aplicação
         if element.get("type") == "ArchiMate:ApplicationComponent":
             components.append({
                 "name": element.get("name"),
@@ -258,24 +296,40 @@ def extract_blizzdesign_components(blizzdesign_data: Dict[str, Any]) -> List[Dic
     return components
 
 
-# ===== MOCK VT/BLIZZDESIGN FUNCTIONS =====
+# ===== FUNÇÕES MOCK VT/BLIZZDESIGN =====
 
 async def get_blizzdesign_export(jt_id: str, tool_context: ToolContext) -> Dict[str, Any]:
-    """MOCKED: Returns mock BlizzDesign export data."""
-    # Store mock flag in context
+    """MOCKADO: Retorna dados mock de export do BlizzDesign.
+    
+    Simula a busca de dados de export do BlizzDesign para um JT específico.
+    Usa dados pré-definidos para JTs conhecidos ou retorna dados padrão.
+    
+    Args:
+        jt_id: ID do JT (Journey/Template) para buscar dados.
+        tool_context: Contexto da ferramenta para armazenar estado.
+    
+    Returns:
+        Dicionário com dados de export do BlizzDesign.
+        
+    Example:
+        >>> export_data = await get_blizzdesign_export("JT-147338", context)
+        >>> print(export_data["viewInfo"]["name"])
+        'Visão Técnica - NPS/CES/CSAT'
+    """
+    # Armazena flag de mock no contexto
     tool_context.state["use_mock"] = True
     
-    # Check if we have specific mock data for this JT
+    # Verifica se temos dados mock específicos para este JT
     if jt_id in BLIZZDESIGN_MOCK_EXPORTS:
         export_data = BLIZZDESIGN_MOCK_EXPORTS[jt_id]
     else:
-        # Return default mock data
+        # Retorna dados mock padrão
         export_data = BLIZZDESIGN_MOCK_EXPORTS["JT-DEFAULT"]
-        # Update JT ID to match request
+        # Atualiza ID do JT para corresponder à requisição
         export_data["viewInfo"]["JT"] = jt_id
         export_data["viewInfo"]["name"] = f"Visão Técnica - {jt_id}"
     
-    # Store in context for reuse
+    # Armazena no contexto para reutilização
     tool_context.state[f"blizzdesign_export_{jt_id}"] = export_data
     tool_context.state[f"blizzdesign_mock_{jt_id}"] = export_data
     
@@ -286,16 +340,35 @@ async def parse_blizzdesign_data(
     blizzdesign_json: Dict[str, Any], 
     tool_context: ToolContext
 ) -> Dict[str, Any]:
-    """MOCKED: Parses BlizzDesign export data."""
+    """MOCKADO: Analisa dados de export do BlizzDesign.
+    
+    Processa os dados de export do BlizzDesign extraindo componentes
+    e agrupando-os por estereótipo (NOVO, ALTERADO, REMOVIDO, MANTIDO).
+    
+    Args:
+        blizzdesign_json: Dados JSON do export do BlizzDesign.
+        tool_context: Contexto da ferramenta para armazenar estado.
+    
+    Returns:
+        Dicionário com dados processados e agrupados.
+        
+    Raises:
+        Exception: Se falha ao processar os dados do BlizzDesign.
+        
+    Example:
+        >>> parsed = await parse_blizzdesign_data(export_data, context)
+        >>> print(f"Total: {parsed['total_components']} componentes")
+        >>> print(f"Novos: {len(parsed['new_components'])}")
+    """
     try:
         view_info = blizzdesign_json.get("viewInfo", {})
-        view_name = view_info.get("name", "Unknown")
+        view_name = view_info.get("name", "Desconhecido")
         jt_id = view_info.get("JT", "")
         
-        # Extract components
+        # Extrai componentes
         components = extract_blizzdesign_components(blizzdesign_json)
         
-        # Group by stereotype
+        # Agrupa por estereótipo
         new_components = []
         modified_components = []
         removed_components = []
@@ -305,6 +378,7 @@ async def parse_blizzdesign_data(
             name = comp["name"]
             stereotype = comp["stereotype"]
             
+            # Classifica componentes por estereótipo
             if stereotype == "NOVO":
                 new_components.append(name)
             elif stereotype == "ALTERADO":
@@ -314,12 +388,12 @@ async def parse_blizzdesign_data(
             elif stereotype == "MANTIDO":
                 maintained_components.append(name)
         
-        # Get metadata
+        # Obtém metadados
         metadata = blizzdesign_json.get("metadata", {})
         element_count = metadata.get("elementCount", 0)
         relationship_count = metadata.get("relationshipCount", 0)
         
-        # Store parsed data in context
+        # Armazena dados processados no contexto
         tool_context.state[f"blizzdesign_{jt_id}"] = {
             "components": components,
             "new_components": new_components,
@@ -343,73 +417,109 @@ async def parse_blizzdesign_data(
         
     except Exception as e:
         return {
-            "error": f"Failed to parse BlizzDesign data: {str(e)}"
+            "error": f"Falha ao processar dados do BlizzDesign: {str(e)}"
         }
 
 
-# ===== MOCK JIRA FUNCTIONS =====
+# ===== FUNÇÕES MOCK JIRA =====
 
 async def get_jira_ticket(ticket_id: str, tool_context: ToolContext) -> Dict[str, Any]:
-    """MOCKED: Returns mock Jira ticket data matching real API structure."""
-    # Simulate different scenarios based on ticket ID
+    """MOCKADO: Retorna dados mock de ticket do Jira correspondendo à estrutura real da API.
+    
+    Simula diferentes cenários baseados no ID do ticket para testes
+    abrangentes do fluxo de validação.
+    
+    Args:
+        ticket_id: ID do ticket Jira para buscar.
+        tool_context: Contexto da ferramenta para armazenar estado.
+    
+    Returns:
+        Dicionário com dados do ticket Jira.
+        
+    Example:
+        >>> ticket = await get_jira_ticket("PDI-12345", context)
+        >>> print(ticket["summary"])
+        'Deploy new services for PDI-12345'
+        >>> print(ticket["components"])
+        ['user-service', 'auth-module', 'notification-service']
+    """
+    # Simula diferentes cenários baseados no ID do ticket
     if "ERROR" in ticket_id:
         return {
             "ticket_id": ticket_id,
-            "error": "Failed to fetch Jira ticket: Connection timeout"
+            "error": "Falha ao buscar ticket Jira: Timeout de conexão"
         }
     
     if ticket_id == "PDI-99999":
-        # Mock ticket with no components
+        # Mock de ticket sem componentes
         return {
             "ticket_id": "10099999",
             "ticket_key": "PDI-99999",
-            "summary": "Deploy empty service",
-            "description": "Deploy service without components for testing",
-            "status": "In Progress",
-            "status_category": "In Progress",
+            "summary": "Deploy service vazio",
+            "description": "Deploy de service sem componentes para teste",
+            "status": "Em Progresso",
+            "status_category": "Em Progresso",
             "assignee": "Maria Santos",
             "reporter": "João Silva",
-            "priority": "High",
+            "priority": "Alta",
             "components": [],
             "development_cycle": "Sprint 23",
-            "pdi_description": "Deploy service without components",
+            "pdi_description": "Deploy de service sem componentes",
             "arqcor_id": ""
         }
     
-    # Default mock response with full structure
+    # Resposta mock padrão com estrutura completa
     mock_components = ["user-service", "auth-module", "notification-service"]
     if "GATEWAY" in ticket_id:
         mock_components.append("api-gateway")
     
-    # Generate internal ID from ticket ID
+    # Gera ID interno a partir do ID do ticket
     internal_id = f"100{ticket_id.split('-')[1]}"
     
     return {
         "ticket_id": internal_id,
         "ticket_key": ticket_id,
-        "summary": f"Deploy new services for {ticket_id}",
-        "description": f"This is a mock ticket for deploying {', '.join(mock_components)} to production environment.",
-        "status": "In Progress",
-        "status_category": "In Progress",
+        "summary": f"Deploy de novos services para {ticket_id}",
+        "description": f"Este é um ticket mock para deploy de {', '.join(mock_components)} no ambiente de produção.",
+        "status": "Em Progresso",
+        "status_category": "Em Progresso",
         "assignee": "João Silva",
         "reporter": "Ana Costa",
-        "priority": "Medium",
+        "priority": "Média",
         "components": mock_components,
         "development_cycle": "Sprint 23",
-        "pdi_description": f"Deploy {', '.join(mock_components)} to production environment",
+        "pdi_description": f"Deploy de {', '.join(mock_components)} no ambiente de produção",
         "arqcor_id": "ARQCOR-123"
     }
 
 
 async def validate_pdi_components(ticket_id: str, tool_context: ToolContext) -> Dict[str, Any]:
-    """MOCKED: Returns mock PDI validation result."""
-    # Simulate different scenarios
+    """MOCKADO: Retorna resultado mock de validação de PDI.
+    
+    Simula a validação de componentes mencionados na descrição do PDI
+    versus os componentes efetivamente listados no ticket.
+    
+    Args:
+        ticket_id: ID do ticket PDI para validar.
+        tool_context: Contexto da ferramenta para armazenar estado.
+    
+    Returns:
+        Dicionário com resultado da validação do PDI.
+        
+    Example:
+        >>> result = await validate_pdi_components("PDI-12345", context)
+        >>> print(result["is_valid"])
+        True
+        >>> print(result["warnings"])
+        []
+    """
+    # Simula diferentes cenários
     if ticket_id == "PDI-DONE":
         return {
             "ticket_id": ticket_id,
             "is_valid": False,
             "components_not_in_description": [],
-            "warnings": ["PDI has status 'Done' - cannot proceed with completed PDI"]
+            "warnings": ["PDI tem status 'Concluído' - não é possível prosseguir com PDI finalizado"]
         }
     
     if ticket_id == "PDI-INVALID":
@@ -417,10 +527,10 @@ async def validate_pdi_components(ticket_id: str, tool_context: ToolContext) -> 
             "ticket_id": ticket_id,
             "is_valid": False,
             "components_not_in_description": ["notification-service"],
-            "warnings": ["Component 'notification-service' not mentioned in PDI description"]
+            "warnings": ["Componente 'notification-service' não mencionado na descrição do PDI"]
         }
     
-    # Default: valid PDI
+    # Padrão: PDI válido
     return {
         "ticket_id": ticket_id,
         "is_valid": True,
@@ -434,15 +544,34 @@ async def validate_components_in_vt(
     components: List[str], 
     tool_context: ToolContext
 ) -> Dict[str, Any]:
-    """MOCKED: Returns mock VT validation result."""
-    # Store in context for later use
+    """MOCKADO: Retorna resultado mock de validação no VT.
+    
+    Simula a validação de componentes contra a Visão Técnica (VT)
+    para verificar se estão aprovados na arquitetura de referência.
+    
+    Args:
+        ticket_id: ID do ticket para contexto.
+        components: Lista de componentes para validar.
+        tool_context: Contexto da ferramenta para armazenar estado.
+    
+    Returns:
+        Dicionário com resultado da validação no VT.
+        
+    Example:
+        >>> result = await validate_components_in_vt("PDI-12345", ["user-service"], context)
+        >>> print(result["is_valid"])
+        True
+        >>> print(result["approved_components"])
+        ['user-service']
+    """
+    # Armazena no contexto para uso posterior
     tool_context.state[f"vt_{ticket_id}"] = {
         "vt_id": "VT-2024-001",
         "architecture": "Microservices",
         "approved_components": ["user-service", "auth-module", "notification-service"]
     }
     
-    # Simulate unapproved components
+    # Simula componentes não aprovados
     if ticket_id == "PDI-UNAPPROVED":
         return {
             "is_valid": False,
@@ -451,7 +580,7 @@ async def validate_components_in_vt(
             "vt_id": "VT-2024-001"
         }
     
-    # Check if any component is not in the approved list
+    # Verifica se algum componente não está na lista aprovada
     approved = ["user-service", "auth-module", "notification-service", "api-gateway"]
     unapproved = [c for c in components if c not in approved]
     
@@ -463,7 +592,7 @@ async def validate_components_in_vt(
             "vt_id": "VT-2024-001"
         }
     
-    # Default: all components approved
+    # Padrão: todos os componentes aprovados
     return {
         "is_valid": True,
         "unapproved_components": [],
@@ -472,22 +601,41 @@ async def validate_components_in_vt(
     }
 
 
-# ===== MOCK ARQCOR FUNCTIONS =====
+# ===== FUNÇÕES MOCK ARQCOR =====
 
 async def create_arqcor_form(
     ticket_id: str,
     evaluator_name: str,
     tool_context: ToolContext
 ) -> Dict[str, Any]:
-    """MOCKED: Returns mock ARQCOR form creation result."""
-    # Simulate error scenario
-    if ticket_id == "PDI-ARQCOR-ERROR":
-        return {"error": "Failed to create ARQCOR form: Service unavailable"}
+    """MOCKADO: Retorna resultado mock de criação de formulário ARQCOR.
     
-    # Generate mock form ID
+    Simula a criação de um formulário no sistema ARQCOR para
+    documentar a validação de aderência arquitetural.
+    
+    Args:
+        ticket_id: ID do ticket associado ao formulário.
+        evaluator_name: Nome do avaliador responsável.
+        tool_context: Contexto da ferramenta para armazenar estado.
+    
+    Returns:
+        Dicionário com informações do formulário criado.
+        
+    Example:
+        >>> form = await create_arqcor_form("PDI-12345", "João Silva", context)
+        >>> print(form["form_id"])
+        'ARQCOR-2024-1234'
+        >>> print(form["status"])
+        'draft'
+    """
+    # Simula cenário de erro
+    if ticket_id == "PDI-ARQCOR-ERROR":
+        return {"error": "Falha ao criar formulário ARQCOR: Serviço indisponível"}
+    
+    # Gera ID mock do formulário
     form_id = f"ARQCOR-2024-{random.randint(1000, 9999)}"
     
-    # Store in context
+    # Armazena no contexto
     tool_context.state[f"arqcor_form_{ticket_id}"] = {
         "form_id": form_id,
         "created_at": datetime.utcnow().isoformat()
@@ -495,7 +643,7 @@ async def create_arqcor_form(
     
     return {
         "form_id": form_id,
-        "status": "draft",
+        "status": "rascunho",
         "form_url": f"https://arqcor.company.com/forms/{form_id}"
     }
 
@@ -504,12 +652,28 @@ async def update_arqcor_form_with_versions(
     form_id: str,
     tool_context: ToolContext
 ) -> Dict[str, Any]:
-    """MOCKED: Returns mock ARQCOR update result."""
-    # Simulate error scenario
+    """MOCKADO: Retorna resultado mock de atualização do ARQCOR.
+    
+    Simula a atualização de um formulário ARQCOR com informações
+    de versões dos componentes validados.
+    
+    Args:
+        form_id: ID do formulário a ser atualizado.
+        tool_context: Contexto da ferramenta para armazenar estado.
+    
+    Returns:
+        Dicionário com status da atualização.
+        
+    Example:
+        >>> result = await update_arqcor_form_with_versions("ARQCOR-2024-1234", context)
+        >>> print(result["updated"])
+        True
+    """
+    # Simula cenário de erro
     if "ERROR" in form_id:
         return {
             "form_id": form_id,
-            "error": "Failed to update ARQCOR form: Form locked"
+            "error": "Falha ao atualizar formulário ARQCOR: Formulário bloqueado"
         }
     
     return {
@@ -523,12 +687,30 @@ async def add_validation_checklist_to_form(
     checklist_items: List[Dict[str, Any]],
     tool_context: ToolContext
 ) -> Dict[str, Any]:
-    """MOCKED: Returns mock checklist addition result."""
-    # Simulate error scenario
+    """MOCKADO: Retorna resultado mock de adição de checklist.
+    
+    Simula a adição de itens de checklist de validação
+    ao formulário ARQCOR.
+    
+    Args:
+        form_id: ID do formulário para adicionar checklist.
+        checklist_items: Lista de itens do checklist a serem adicionados.
+        tool_context: Contexto da ferramenta para armazenar estado.
+    
+    Returns:
+        Dicionário com status da adição do checklist.
+        
+    Example:
+        >>> items = [{"item": "Validar componentes", "status": "pending"}]
+        >>> result = await add_validation_checklist_to_form("ARQCOR-2024-1234", items, context)
+        >>> print(result["checklist_added"])
+        True
+    """
+    # Simula cenário de erro
     if "ERROR" in form_id:
         return {
             "form_id": form_id,
-            "error": "Failed to add checklist: Database error"
+            "error": "Falha ao adicionar checklist: Erro de banco de dados"
         }
     
     return {
@@ -537,13 +719,33 @@ async def add_validation_checklist_to_form(
     }
 
 
-# ===== MOCK PORTAL TECH FUNCTIONS =====
+# ===== FUNÇÕES MOCK PORTAL TECH =====
 
 async def check_multiple_component_versions(
     components: List[Dict[str, str]],
     tool_context: ToolContext
 ) -> Dict[str, Any]:
-    """MOCKED: Returns mock version check result matching real API structure."""
+    """MOCKADO: Retorna resultado mock de verificação de versões correspondendo à estrutura real da API.
+    
+    Simula a verificação de versões de múltiplos componentes no Portal Tech,
+    classificando mudanças por tipo (NEW, MAJOR, MINOR, PATCH) e identificando
+    componentes com erro.
+    
+    Args:
+        components: Lista de dicionários com 'name' e 'version' dos componentes.
+        tool_context: Contexto da ferramenta para armazenar estado.
+    
+    Returns:
+        Dicionário com resultados detalhados da verificação de versões.
+        
+    Example:
+        >>> components = [{"name": "user-service", "version": "1.2.0"}]
+        >>> result = await check_multiple_component_versions(components, context)
+        >>> print(result["summary"])
+        '1 components: 1 minor updates'
+        >>> print(result["version_changes"][0]["type"])
+        'MINOR'
+    """
     version_changes = []
     new_components = []
     major_changes = []
@@ -553,17 +755,17 @@ async def check_multiple_component_versions(
         name = comp["name"]
         version = comp["version"]
         
-        # Simulate error for specific component names
+        # Simula erro para nomes de componentes específicos
         if "error" in name.lower():
             components_with_errors.append(name)
             continue
         
-        # Simulate different scenarios
+        # Simula diferentes cenários baseados no nome do componente
         if "new" in name.lower():
             new_components.append(name)
             version_changes.append({
                 "component": name,
-                "change": f"NEW → {version}",
+                "change": f"NOVO → {version}",
                 "type": "NEW"
             })
         elif "major" in name.lower():
@@ -574,7 +776,7 @@ async def check_multiple_component_versions(
                 "type": "MAJOR"
             })
         else:
-            # Simulate minor version change
+            # Simula mudança de versão menor
             old_version = "1.0.0"
             if version.startswith("1.0."):
                 change_type = "PATCH"
@@ -590,7 +792,7 @@ async def check_multiple_component_versions(
                 "type": change_type
             })
     
-    # Build summary
+    # Constrói resumo
     total = len(components)
     new_count = len(new_components)
     major_count = len(major_changes)
@@ -598,24 +800,24 @@ async def check_multiple_component_versions(
     minor_count = len([vc for vc in version_changes if vc["type"] == "MINOR"])
     patch_count = len([vc for vc in version_changes if vc["type"] == "PATCH"])
     
-    summary_parts = [f"{total} components"]
+    summary_parts = [f"{total} componentes"]
     details = []
     if new_count > 0:
-        details.append(f"{new_count} new")
+        details.append(f"{new_count} novos")
     if major_count > 0:
-        details.append(f"{major_count} major updates")
+        details.append(f"{major_count} atualizações major")
     if minor_count > 0:
-        details.append(f"{minor_count} minor updates")
+        details.append(f"{minor_count} atualizações minor")
     if patch_count > 0:
-        details.append(f"{patch_count} patch updates")
+        details.append(f"{patch_count} atualizações patch")
     if error_count > 0:
-        details.append(f"{error_count} errors")
+        details.append(f"{error_count} erros")
     
     summary = summary_parts[0]
     if details:
         summary += ": " + ", ".join(details)
     
-    # Store in context
+    # Armazena no contexto
     tool_context.state["version_check_results"] = {
         "version_changes": version_changes,
         "new_components": new_components,
