@@ -97,7 +97,7 @@ async def check_component_versions(
 
 version_check_agent = Agent(
     name="version_check_subagent",
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash",
     description="Subagente especializado para validação e comparação de versões de componentes.",
     instruction=prompt.VERSION_CHECK_PROMPT,
     tools=[check_component_versions]

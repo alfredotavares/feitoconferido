@@ -120,7 +120,7 @@ async def manage_arqcor_form(
 # ARQCOR Form Management Subagent Configuration
 arqcor_form_agent = Agent(
     name="arqcor_form_subagent",
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash",
     description="Subagente especializado para gerenciamento de formulários de conformidade do ARQCOR.",
     instruction=prompt.ARQCOR_FORM_PROMPT,
     tools=[manage_arqcor_form]
