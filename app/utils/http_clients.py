@@ -1,12 +1,10 @@
-"""Utilitários de cliente HTTP com retry e tratamento de erros.
+"""HTTP client utilities with retry and error handling.
 
-Fornece clientes HTTP configurados para cada serviço externo com
-autenticação apropriada, timeouts e estratégias de retry.
+Provides configured HTTP clients for each external service with
+appropriate authentication, timeouts and retry strategies.
 """
 
-import base64
 from datetime import datetime, timedelta, timezone
-import os
 from typing import Optional, Dict, Any
 import httpx
 from tenacity import (
@@ -20,23 +18,23 @@ from ..config.settings import get_settings
 
 
 class BaseHTTPClient:
-    """Cliente HTTP base com lógica comum de retry e tratamento de erros.
+    """Base HTTP client with common retry logic and error handling.
 
-    Fornece uma base para clientes HTTP específicos de serviços com
-    lógica de retry integrada e tratamento adequado de erros.
+    Provides a foundation for service-specific HTTP clients with
+    integrated retry logic and proper error handling.
     """
 
     def __init__(self, base_url: str, timeout: int = 30, headers: Optional[Dict[str, str]] = None):
-        """Inicializa o cliente HTTP.
+        """Initializes the HTTP client.
 
         Args:
-            base_url: URL base para o serviço.
-            timeout: Timeout da requisição em segundos.
-            headers: Cabeçalhos padrão para todas as requisições.
+            base_url: Base URL for the service.
+            timeout: Request timeout in seconds.
+            headers: Default headers for all requests.
 
         Example:
             >>> client = BaseHTTPClient("https://api.example.com", timeout=60)
-            >>> # Cliente configurado com timeout de 60 segundos
+            >>> # Client configured with 60 seconds timeout
         """
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
@@ -49,23 +47,22 @@ class BaseHTTPClient:
         )
 
     async def __aenter__(self):
-        """Entrada do gerenciador de contexto assíncrono.
+        """Async context manager entry.
         
         Returns:
-            Instância do próprio cliente para uso em contexto async with.
+            Client instance itself for use in async with context.
         """
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Saída do gerenciador de contexto assíncrono.
+        """Async context manager exit.
         
-        Garante que o cliente HTTP seja fechado adequadamente
-        mesmo em caso de exceções.
+        Ensures HTTP client is properly closed even in case of exceptions.
         
         Args:
-            exc_type: Tipo de exceção (se houver).
-            exc_val: Valor da exceção (se houver).
-            exc_tb: Traceback da exceção (se houver).
+            exc_type: Exception type (if any).
+            exc_val: Exception value (if any).
+            exc_tb: Exception traceback (if any).
         """
         await self.client.aclose()
 
@@ -75,21 +72,21 @@ class BaseHTTPClient:
         retry=retry_if_exception_type(httpx.HTTPError)
     )
     async def request(self, method: str, endpoint: str, **kwargs) -> httpx.Response:
-        """Faz uma requisição HTTP com lógica de retry.
+        """Makes an HTTP request with retry logic.
 
-        Implementa estratégia de retry exponencial com até 3 tentativas
-        para requisições que falham com HTTPError.
+        Implements exponential backoff retry strategy with up to 3 attempts
+        for requests that fail with HTTPError.
 
         Args:
-            method: Método HTTP (GET, POST, etc.).
-            endpoint: Caminho do endpoint da API.
-            **kwargs: Argumentos adicionais para requisição httpx.
+            method: HTTP method (GET, POST, etc.).
+            endpoint: API endpoint path.
+            **kwargs: Additional arguments for httpx request.
 
         Returns:
-            Objeto de resposta HTTP.
+            HTTP response object.
 
         Raises:
-            httpx.HTTPError: Se a requisição falha após todas as tentativas.
+            httpx.HTTPError: If request fails after all retry attempts.
 
         Example:
             >>> response = await client.request("GET", "/users/1")
@@ -101,14 +98,14 @@ class BaseHTTPClient:
         return response
 
     async def get(self, endpoint: str, **kwargs) -> httpx.Response:
-        """Faz uma requisição GET.
+        """Makes a GET request.
 
         Args:
-            endpoint: Caminho do endpoint da API.
-            **kwargs: Argumentos adicionais para a requisição.
+            endpoint: API endpoint path.
+            **kwargs: Additional arguments for the request.
 
         Returns:
-            Objeto de resposta HTTP.
+            HTTP response object.
 
         Example:
             >>> response = await client.get("/users", params={"page": 1})
@@ -116,70 +113,69 @@ class BaseHTTPClient:
         return await self.request("GET", endpoint, **kwargs)
 
     async def post(self, endpoint: str, **kwargs) -> httpx.Response:
-        """Faz uma requisição POST.
+        """Makes a POST request.
 
         Args:
-            endpoint: Caminho do endpoint da API.
-            **kwargs: Argumentos adicionais para a requisição.
+            endpoint: API endpoint path.
+            **kwargs: Additional arguments for the request.
 
         Returns:
-            Objeto de resposta HTTP.
+            HTTP response object.
 
         Example:
-            >>> response = await client.post("/users", json={"name": "João"})
+            >>> response = await client.post("/users", json={"name": "John"})
         """
         return await self.request("POST", endpoint, **kwargs)
 
     async def put(self, endpoint: str, **kwargs) -> httpx.Response:
-        """Faz uma requisição PUT.
+        """Makes a PUT request.
 
         Args:
-            endpoint: Caminho do endpoint da API.
-            **kwargs: Argumentos adicionais para a requisição.
+            endpoint: API endpoint path.
+            **kwargs: Additional arguments for the request.
 
         Returns:
-            Objeto de resposta HTTP.
+            HTTP response object.
 
         Example:
-            >>> response = await client.put("/users/1", json={"name": "João Silva"})
+            >>> response = await client.put("/users/1", json={"name": "John Silva"})
         """
         return await self.request("PUT", endpoint, **kwargs)
 
     async def patch(self, endpoint: str, **kwargs) -> httpx.Response:
-        """Faz uma requisição PATCH.
+        """Makes a PATCH request.
 
         Args:
-            endpoint: Caminho do endpoint da API.
-            **kwargs: Argumentos adicionais para a requisição.
+            endpoint: API endpoint path.
+            **kwargs: Additional arguments for the request.
 
         Returns:
-            Objeto de resposta HTTP.
+            HTTP response object.
 
         Example:
-            >>> response = await client.patch("/users/1", json={"email": "novo@email.com"})
+            >>> response = await client.patch("/users/1", json={"email": "new@email.com"})
         """
         return await self.request("PATCH", endpoint, **kwargs)
 
 
 class JiraClient(BaseHTTPClient):
-    """Cliente HTTP configurado para acesso à API do Jira.
+    """HTTP client configured for Jira API access.
 
-    Lida com autenticação específica do Jira e formatação de requisições.
-    Utiliza Bearer token para autenticação.
+    Handles Jira-specific authentication and request formatting.
+    Uses Bearer token for authentication.
     """
 
     def __init__(self):
-        """Inicializa cliente do Jira com configurações do arquivo de configuração.
+        """Initializes Jira client with configuration file settings.
         
-        Obtém as configurações do Jira (URL base, token de acesso, timeout)
-        do sistema de configuração e configura os cabeçalhos apropriados.
+        Obtains Jira settings (base URL, access token, timeout)
+        from configuration system and sets up appropriate headers.
         
         Raises:
-            ConfigurationError: Se as configurações do Jira não estiverem válidas.
+            ConfigurationError: If Jira configuration is not valid.
         """
         settings = get_settings().jira
         
-        # Configura cabeçalhos específicos do Jira
         headers = {
             "Authorization": f"Bearer {settings.access_token}",
             "Accept": "application/json",
@@ -194,24 +190,23 @@ class JiraClient(BaseHTTPClient):
 
 
 class VTClient(BaseHTTPClient):
-    """Cliente HTTP configurado para acesso à API do VT/BlizzDesign.
+    """HTTP client configured for VT/BlizzDesign API access.
 
-    Lida com autenticação específica do VT usando Bearer token.
-    Usado para consultar dados de arquitetura e componentes.
+    Handles VT-specific authentication using Bearer token.
+    Used to query architecture and component data.
     """
 
     def __init__(self):
-        """Inicializa cliente do VT com configurações do arquivo de configuração.
+        """Initializes VT client with configuration file settings.
         
-        Configura autenticação via Bearer token e cabeçalhos
-        apropriados para comunicação com a API do VT/BlizzDesign.
+        Configures authentication via Bearer token and appropriate
+        headers for VT/BlizzDesign API communication.
         
         Raises:
-            ConfigurationError: Se as configurações do VT não estiverem válidas.
+            ConfigurationError: If VT configuration is not valid.
         """
         settings = get_settings().vt
         
-        # Configura cabeçalhos específicos do VT/BlizzDesign
         headers = {
             "Authorization": f"Bearer {settings.api_key}",
             "Accept": "application/json",
@@ -226,31 +221,29 @@ class VTClient(BaseHTTPClient):
 
 
 class PortalTechClient(BaseHTTPClient):
-    """Cliente HTTP configurado para acesso ao Component (Portal Tech).
+    """HTTP client configured for Component (Portal Tech) access.
 
-    Lida tanto com acesso via API (com token) quanto fallback via web scraping.
-    Utilizado para obter informações de componentes e versões.
+    Handles both API access (with token) and fallback via web scraping.
+    Used to obtain component information and versions.
     """
 
     def __init__(self):
-        """Inicializa cliente do Component (Portal Tech) com configurações do arquivo de configuração.
+        """Initializes Component (Portal Tech) client with configuration file settings.
         
-        Configura cabeçalhos para simular navegador web (útil para web scraping)
-        e adiciona token de autenticação se disponível nas configurações.
+        Configures headers to simulate web browser (useful for web scraping)
+        and adds authentication token if available in settings.
         
         Raises:
-            ConfigurationError: Se as configurações do Portal Tech não estiverem válidas.
+            ConfigurationError: If Portal Tech configuration is not valid.
         """
         settings = get_settings().portal_tech
         
-        # Cabeçalhos que simulam um navegador web para compatibilidade
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Accept": "text/html,application/json;q=0.9,*/*;q=0.8",
             "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8"
         }
         
-        # Adiciona token de autenticação se configurado
         if settings.auth_token:
             headers["Authorization"] = f"Bearer {settings.auth_token}"
         
@@ -262,20 +255,20 @@ class PortalTechClient(BaseHTTPClient):
 
 
 class ARQCORClient(BaseHTTPClient):
-    """Cliente HTTP configurado para acesso à API do ARQCOR.
+    """HTTP client configured for ARQCOR API access.
 
-    Lida com fluxo de autenticação OAuth2 e gerenciamento de tokens.
-    Implementa renovação automática de tokens quando expirados.
+    Handles OAuth2 authentication flow and token management.
+    Implements automatic token renewal when expired.
     """
 
     def __init__(self):
-        """Inicializa cliente do ARQCOR com configurações do arquivo de configuração.
+        """Initializes ARQCOR client with configuration file settings.
         
-        Configura credenciais OAuth2 e inicializa variáveis de controle
-        de token para gerenciamento automático de autenticação.
+        Configures OAuth2 credentials and initializes token control
+        variables for automatic authentication management.
         
         Raises:
-            ConfigurationError: Se as configurações do ARQCOR não estiverem válidas.
+            ConfigurationError: If ARQCOR configuration is not valid.
         """
         settings = get_settings().arqcor
         
@@ -284,40 +277,36 @@ class ARQCORClient(BaseHTTPClient):
             timeout=settings.timeout
         )
         
-        # Credenciais OAuth2
         self.client_id = settings.client_id
         self.client_secret = settings.client_secret
         
-        # Controle de token interno
         self._access_token: Optional[str] = None
         self._token_expires_at: Optional[datetime] = None
 
     async def _ensure_authenticated(self) -> None:
-        """Garante que um token OAuth2 válido está disponível.
+        """Ensures a valid OAuth2 token is available.
 
-        Verifica se o token atual ainda é válido e renova
-        se expirado ou não presente.
+        Checks if current token is still valid and renews
+        if expired or not present.
         
         Raises:
-            httpx.HTTPError: Se falha na renovação do token.
+            httpx.HTTPError: If token renewal fails.
         """
         if self._access_token and self._token_expires_at:
-            # Verifica se token ainda é válido
             if datetime.now(timezone.utc) < self._token_expires_at:
                 return
         
-        # Token expirado ou não presente, renova
         await self._authenticate()
 
     async def _authenticate(self) -> None:
-        """Autentica com ARQCOR usando credenciais OAuth2 client credentials.
+        """Authenticates with ARQCOR using OAuth2 client credentials.
         
-        Implementa o fluxo OAuth2 Client Credentials Grant para obter
-        um access token válido para requisições subsequentes.
+        Implements OAuth2 Client Credentials Grant flow to obtain
+        a valid access token for subsequent requests.
         
         Raises:
-            httpx.HTTPError: Se falha na autenticação.
-            ValueError: Se resposta não contém token válido.
+            httpx.HTTPError: If authentication fails.
+            ValueError: If response doesn't contain valid token.
         """
         auth_data = {
             "grant_type": "client_credentials",
@@ -335,35 +324,33 @@ class ARQCORClient(BaseHTTPClient):
         
         token_data = response.json()
         self._access_token = token_data.get("access_token")
-        expires_in = token_data.get("expires_in", 3600)  # Default 1 hora
+        expires_in = token_data.get("expires_in", 3600)
         
-        # Define expiração com buffer de 60 segundos para renovação antecipada
         self._token_expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in - 60)
 
     async def request(self, method: str, endpoint: str, **kwargs) -> httpx.Response:
-        """Faz uma requisição autenticada para o ARQCOR.
+        """Makes an authenticated request to ARQCOR.
 
-        Garante que a requisição tenha um token válido no cabeçalho
-        de autorização, renovando automaticamente se necessário.
+        Ensures request has a valid token in authorization header,
+        automatically renewing if necessary.
 
         Args:
-            method: Método HTTP.
-            endpoint: Endpoint da API.
-            **kwargs: Argumentos adicionais da requisição.
+            method: HTTP method.
+            endpoint: API endpoint.
+            **kwargs: Additional request arguments.
 
         Returns:
-            Objeto de resposta HTTP.
+            HTTP response object.
 
         Raises:
-            httpx.HTTPError: Se falha na autenticação ou requisição.
+            httpx.HTTPError: If authentication or request fails.
 
         Example:
             >>> response = await arqcor_client.request("GET", "/forms")
-            >>> # Token é gerenciado automaticamente
+            >>> # Token is managed automatically
         """
         await self._ensure_authenticated()
         
-        # Adiciona cabeçalho de autenticação à requisição
         if "headers" not in kwargs:
             kwargs["headers"] = {}
         kwargs["headers"]["Authorization"] = f"Bearer {self._access_token}"
@@ -371,18 +358,17 @@ class ARQCORClient(BaseHTTPClient):
         return await super().request(method, endpoint, **kwargs)
 
 
-# Instâncias singleton para reutilização eficiente
 _clients: Dict[str, Any] = {}
 
 
 async def get_jira_client() -> JiraClient:
-    """Obtém ou cria instância singleton do cliente Jira.
+    """Gets or creates singleton instance of Jira client.
 
-    Implementa padrão singleton para reutilizar a mesma instância
-    do cliente Jira em toda a aplicação, evitando múltiplas conexões.
+    Implements singleton pattern to reuse the same Jira client
+    instance throughout the application, avoiding multiple connections.
 
     Returns:
-        Instância configurada do JiraClient.
+        Configured JiraClient instance.
 
     Example:
         >>> jira = await get_jira_client()
@@ -394,13 +380,13 @@ async def get_jira_client() -> JiraClient:
 
 
 async def get_vt_client() -> VTClient:
-    """Obtém ou cria instância singleton do cliente VT.
+    """Gets or creates singleton instance of VT client.
 
-    Implementa padrão singleton para reutilizar a mesma instância
-    do cliente VT em toda a aplicação.
+    Implements singleton pattern to reuse the same VT client
+    instance throughout the application.
 
     Returns:
-        Instância configurada do VTClient.
+        Configured VTClient instance.
 
     Example:
         >>> vt = await get_vt_client()
@@ -412,13 +398,13 @@ async def get_vt_client() -> VTClient:
 
 
 async def get_portal_tech_client() -> PortalTechClient:
-    """Obtém ou cria instância singleton do cliente Component (Portal Tech).
+    """Gets or creates singleton instance of Component (Portal Tech) client.
 
-    Implementa padrão singleton para reutilizar a mesma instância
-    do cliente Portal Tech em toda a aplicação.
+    Implements singleton pattern to reuse the same Portal Tech client
+    instance throughout the application.
 
     Returns:
-        Instância configurada do PortalTechClient.
+        Configured PortalTechClient instance.
 
     Example:
         >>> portal = await get_portal_tech_client()
@@ -430,14 +416,14 @@ async def get_portal_tech_client() -> PortalTechClient:
 
 
 async def get_arqcor_client() -> ARQCORClient:
-    """Obtém ou cria instância singleton do cliente ARQCOR.
+    """Gets or creates singleton instance of ARQCOR client.
 
-    Implementa padrão singleton para reutilizar a mesma instância
-    do cliente ARQCOR em toda a aplicação, mantendo o token OAuth2
-    em memória para eficiência.
+    Implements singleton pattern to reuse the same ARQCOR client
+    instance throughout the application, maintaining OAuth2 token
+    in memory for efficiency.
 
     Returns:
-        Instância configurada do ARQCORClient.
+        Configured ARQCORClient instance.
 
     Example:
         >>> arqcor = await get_arqcor_client()

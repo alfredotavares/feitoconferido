@@ -1,83 +1,26 @@
-"""Utilitários de formatação para o agente Feito/Conferido.
+"""Formatting utilities for the Done/Verified agent.
 
-Fornece funções para formatação de saída, análise de entrada
-e padronização de apresentação de dados.
+Provides functions for output formatting, input analysis,
+and standardization of data presentation.
 """
 
-from typing import Dict, List, Any, Optional, Tuple
-from datetime import datetime, timezone
+from typing import Dict, List, Any
 import re
 
 
-def format_component_name(component_name: str) -> str:
-    """Formata um nome de componente para exibição consistente.
-
-    Normaliza nomes de componentes para um formato padrão.
-
-    Args:
-        component_name: Nome bruto do componente.
-
-    Returns:
-        Nome do componente formatado.
-
-    Example:
-        >>> format_component_name("USER_SERVICE")
-        'user-service'
-        >>> format_component_name("auth.module")
-        'auth-module'
-    """
-    
-    formatted = component_name.lower()
-    formatted = re.sub(r'[_.\s]+', '-', formatted)
-    return formatted
-
-
-def format_version_comparison(
-    component: str, 
-    current_version: str, 
-    expected_version: str
-) -> str:
-    """Formata o resultado de uma comparação de versões para exibição.
-
-    Cria uma comparação legível entre versões atual e esperada.
-
-    Args:
-        component: Nome do componente.
-        current_version: Versão atualmente implantada.
-        expected_version: Versão esperada/requerida.
-
-    Returns:
-        String de comparação formatada.
-
-    Example:
-        >>> format_version_comparison("user-service", "1.2.3", "1.3.0")
-        'user-service: 1.2.3 → 1.3.0 (atualização necessária)'
-    """
-    comparison = compare_versions(current_version, expected_version)
-    
-    if comparison == 0:
-        status = "✓ (versões coincidem)"
-    elif comparison < 0:
-        status = "⬆ (atualização necessária)"
-    else:
-        status = "⚠ (mais nova que esperada)"
-    
-    return f"{component}: {current_version} → {expected_version} {status}"
-
-
 def compare_versions(version1: str, version2: str) -> int:
-    """Compara duas strings de versão semântica.
+    """Compares two semantic version strings.
 
-    Realiza comparação de versões semânticas seguindo as regras do semver.
+    Performs semantic version comparison following semver rules.
 
     Args:
-        version1: Primeira string de versão.
-        version2: Segunda string de versão.
+        version1: First version string.
+        version2: Second version string.
 
     Returns:
-        -1 se version1 < version2
-         0 se version1 == version2
-         1 se version1 > version2
+        -1 if version1 < version2
+         0 if version1 == version2
+         1 if version1 > version2
 
     Example:
         >>> compare_versions("1.2.3", "1.2.4")
@@ -86,7 +29,7 @@ def compare_versions(version1: str, version2: str) -> int:
         1
     """
     def parse_version(v: str) -> tuple:
-        """Converte string de versão em tupla de inteiros para comparação."""
+        """Converts version string to tuple of integers for comparison."""
         parts = v.split('.')
         return tuple(int(part) for part in parts[:3])  
     
@@ -101,95 +44,24 @@ def compare_versions(version1: str, version2: str) -> int:
         else:
             return 0
     except (ValueError, AttributeError):
-        # Fallback para comparação lexicográfica se parsing falhar
         return -1 if version1 < version2 else (1 if version1 > version2 else 0)
 
 
-def format_validation_result(status: str, 
-                             errors: List[str], 
-                             warnings: List[str],
-                             manual_actions: List[str]) -> str:
-    """Formata um resultado de validação para exibição.
-
-    Cria uma apresentação estruturada do resultado de validação
-    com diferentes tipos de mensagens organizadas por categoria.
-
-    Args:
-        status: Status geral (APPROVED, FAILED, REQUIRES_MANUAL_ACTION).
-        errors: Lista de mensagens de erro.
-        warnings: Lista de mensagens de aviso.
-        manual_actions: Lista de ações manuais necessárias.
-
-    Returns:
-        String de resultado formatada.
-
-    Example:
-        >>> format_validation_result("APPROVED", [], ["Versão antiga"], [])
-        '✅ Status: APPROVED\\n\\n⚠️ Avisos:\\n  • Versão antiga'
-    """
-    status_emoji = {
-        "APPROVED": "✅",
-        "FAILED": "❌",
-        "REQUIRES_MANUAL_ACTION": "⚠️"
-    }.get(status, "❓")
-    
-    result = f"{status_emoji} Status: {status}\n"
-    
-    if errors:
-        result += "\n❌ Erros:\n"
-        for error in errors:
-            result += f"  • {error}\n"
-    
-    if warnings:
-        result += "\n⚠️ Avisos:\n"
-        for warning in warnings:
-            result += f"  • {warning}\n"
-    
-    if manual_actions:
-        result += "\n📋 Ações Manuais Necessárias:\n"
-        for action in manual_actions:
-            result += f"  • {action}\n"
-    
-    return result.strip()
-
-
-def format_timestamp(dt: Optional[datetime] = None) -> str:
-    """Formata um datetime para exibição.
-
-    Converte um objeto datetime em string formatada padrão
-    para uso em relatórios e logs.
-
-    Args:
-        dt: Datetime para formatar. Usa horário atual se None.
-
-    Returns:
-        String de timestamp formatada.
-
-    Example:
-        >>> format_timestamp(datetime(2024, 1, 15, 10, 30, 0))
-        '2024-01-15 10:30:00'
-    """
-    if dt is None:
-        dt = datetime.now(timezone.utc)
-    
-    return dt.strftime("%Y-%m-%d %H:%M:%S")
-
-
 def parse_component_list_from_text(text: str) -> Dict[str, str]:
-    """Extrai componentes e versões do texto de entrada do usuário.
+    """Extracts components and versions from user input text.
 
-    Parser aprimorado que suporta múltiplos formatos para especificação de componentes:
-    - "componente -> versão"
-    - "componente : versão"
-    - "componente versão" (separado por espaço)
-    - Formato JSON
-    - Listas separadas por vírgula
+    Enhanced parser that supports multiple formats for component specification:
+    - "component -> version"
+    - "component : version"
+    - "component version" (space separated)
+    - JSON format
+    - Comma-separated lists
 
     Args:
-        text: Texto de entrada do usuário contendo lista de componentes.
+        text: User input text containing component list.
 
     Returns:
-        Dicionário mapeando nomes de componentes para versões.
+        Dictionary mapping component names to versions.
 
     Example:
         >>> text = '''
@@ -213,11 +85,9 @@ def parse_component_list_from_text(text: str) -> Dict[str, str]:
     
     for line in lines:
         line = line.strip()
-        # Ignora linhas vazias e comentários
         if not line or line.startswith('#') or line.startswith('//'):
             continue
         
-        # Tenta parsear como JSON
         if line.startswith('{') and line.endswith('}'):
             try:
                 import json
@@ -228,7 +98,6 @@ def parse_component_list_from_text(text: str) -> Dict[str, str]:
             except:
                 pass
         
-        # Formato: componente -> versão
         if '->' in line:
             parts = line.split('->')
             if len(parts) == 2:
@@ -236,14 +105,12 @@ def parse_component_list_from_text(text: str) -> Dict[str, str]:
                 version = parts[1].strip()
                 components[component_name] = version
         
-        # Formato: componente : versão
         elif ':' in line and not line.startswith('{'):
             parts = line.split(':', 1)
             if len(parts) == 2:
                 component_name = parts[0].strip()
                 version = parts[1].strip()
                 
-                # Suporta múltiplos componentes com a mesma versão
                 if ',' in component_name:
                     comp_names = [c.strip() for c in component_name.split(',')]
                     for comp in comp_names:
@@ -252,17 +119,14 @@ def parse_component_list_from_text(text: str) -> Dict[str, str]:
                 else:
                     components[component_name] = version
         
-        # Formato: componente versão (separado por espaço)
         else:
             parts = line.split()
             if len(parts) >= 2 and re.match(r'^\d+\.\d+', parts[-1]):
                 version = parts[-1]
                 component_name = ' '.join(parts[:-1])
                 components[component_name] = version
-            # Apenas nome do componente
             elif len(parts) == 1:
                 components[parts[0]] = ""
-            # Lista separada por vírgulas
             elif ',' in line:
                 comp_names = [c.strip() for c in line.split(',')]
                 for comp in comp_names:
@@ -273,16 +137,16 @@ def parse_component_list_from_text(text: str) -> Dict[str, str]:
 
 
 def extract_blizzdesign_components(blizzdesign_data: Dict[str, Any]) -> List[Dict[str, str]]:
-    """Extrai informações de componentes do export do BlizzDesign.
+    """Extracts component information from BlizzDesign export.
 
-    Extração aprimorada que lida com vários formatos de export do BlizzDesign
-    e fornece metadados adicionais.
+    Enhanced extraction that handles various BlizzDesign export formats
+    and provides additional metadata.
 
     Args:
-        blizzdesign_data: Dados brutos do export do BlizzDesign.
+        blizzdesign_data: Raw data from BlizzDesign export.
 
     Returns:
-        Lista de dicionários de componentes com nome, estereótipo e metadados.
+        List of component dictionaries with name, stereotype and metadata.
 
     Example:
         >>> data = {
@@ -304,7 +168,6 @@ def extract_blizzdesign_components(blizzdesign_data: Dict[str, Any]) -> List[Dic
     for element in elements:
         element_type = element.get("type", "")
         
-        # Filtra apenas componentes de aplicação
         if any(comp_type in element_type for comp_type in 
                ["ApplicationComponent", "Component", "Service"]):
             
@@ -314,12 +177,10 @@ def extract_blizzdesign_components(blizzdesign_data: Dict[str, Any]) -> List[Dic
                 "type": element_type.split(":")[-1] if ":" in element_type else element_type
             }
             
-            # Adiciona propriedades adicionais se disponíveis
             properties = element.get("properties", {})
             if "version" in properties:
                 component_info["version"] = properties["version"]
             
-            # Metadados opcionais
             if "description" in element:
                 component_info["description"] = element["description"]
             
@@ -332,16 +193,16 @@ def extract_blizzdesign_components(blizzdesign_data: Dict[str, Any]) -> List[Dic
 
 
 def format_component_status_summary(components_by_status: Dict[str, List[str]]) -> str:
-    """Formata um resumo de componentes agrupados por status.
+    """Formats a summary of components grouped by status.
 
-    Cria um resumo legível dos status dos componentes com contagens
-    e indicadores visuais.
+    Creates a readable summary of component statuses with counts
+    and visual indicators.
 
     Args:
-        components_by_status: Dicionário mapeando status para listas de componentes.
+        components_by_status: Dictionary mapping status to component lists.
 
     Returns:
-        String de resumo formatada.
+        Formatted summary string.
 
     Example:
         >>> status_data = {
@@ -350,7 +211,7 @@ def format_component_status_summary(components_by_status: Dict[str, List[str]]) 
         ...     "REMOVIDO": []
         ... }
         >>> print(format_component_status_summary(status_data))
-        📊 Resumo de Status dos Componentes:
+        📊 Component Status Summary:
         
         🆕 NOVO (2):
           • service-a
@@ -360,7 +221,7 @@ def format_component_status_summary(components_by_status: Dict[str, List[str]]) 
           • service-c
         
         ❌ REMOVIDO (0):
-          Nenhum
+          None
     """
     status_icons = {
         "NOVO": "🆕",
@@ -370,7 +231,7 @@ def format_component_status_summary(components_by_status: Dict[str, List[str]]) 
         "INDEFINIDO": "❓"
     }
     
-    result = ["📊 Resumo de Status dos Componentes:"]
+    result = ["📊 Component Status Summary:"]
     result.append("")
     
     for status, components in components_by_status.items():
@@ -380,13 +241,12 @@ def format_component_status_summary(components_by_status: Dict[str, List[str]]) 
         result.append(f"{icon} {status} ({count}):")
         
         if components:
-            # Limita a exibição para evitar output muito longo
             for comp in components[:5]:
                 result.append(f"  • {comp}")
             if len(components) > 5:
-                result.append(f"  ... e mais {len(components) - 5}")
+                result.append(f"  ... and {len(components) - 5} more")
         else:
-            result.append("  Nenhum")
+            result.append("  None")
         
         result.append("")
     
@@ -397,17 +257,17 @@ def format_architecture_validation_report(
     validation_result: Dict[str, Any],
     include_details: bool = True
 ) -> str:
-    """Formata um relatório abrangente de validação de arquitetura.
+    """Formats a comprehensive architecture validation report.
 
-    Cria um relatório detalhado dos resultados de validação de arquitetura
-    com estatísticas e informações acionáveis.
+    Creates a detailed report of architecture validation results
+    with statistics and actionable information.
 
     Args:
-        validation_result: Resultado de validação de validate_components_vs_architecture.
-        include_details: Se deve incluir listas detalhadas de componentes.
+        validation_result: Validation result from validate_components_vs_architecture.
+        include_details: Whether to include detailed component lists.
 
     Returns:
-        String de relatório formatada.
+        Formatted report string.
 
     Example:
         >>> result = {
@@ -416,77 +276,72 @@ def format_architecture_validation_report(
         ...     "missing_components": ["service-x", "service-y"]
         ... }
         >>> print(format_architecture_validation_report(result))
-        📋 Relatório de Validação de Arquitetura
-        ========================================
+        📋 Architecture Validation Report
+        ================================
         ...
     """
-    lines = ["📋 Relatório de Validação de Arquitetura", "=" * 40]
+    lines = ["📋 Architecture Validation Report", "=" * 32]
     
-    # Seção de resumo
     if "validation_summary" in validation_result:
         summary = validation_result["validation_summary"]
         lines.extend([
             "",
-            "📊 Resumo:",
-            f"  Total de Componentes: {summary.get('total', 0)}",
-            f"  Encontrados: {summary.get('found', 0)}",
-            f"  Ausentes: {summary.get('missing', 0)}",
-            f"  Taxa de Sucesso: {summary.get('success_rate', '0%')}",
+            "📊 Summary:",
+            f"  Total Components: {summary.get('total', 0)}",
+            f"  Found: {summary.get('found', 0)}",
+            f"  Missing: {summary.get('missing', 0)}",
+            f"  Success Rate: {summary.get('success_rate', '0%')}",
             ""
         ])
     
-    # Seção de breakdown por status
     if "status_breakdown" in validation_result and include_details:
         lines.append(format_component_status_summary(
             validation_result["status_breakdown"]
         ))
         lines.append("")
     
-    # Seção de componentes ausentes
     if "missing_components" in validation_result:
         missing = validation_result["missing_components"]
         if missing:
             lines.extend([
-                "❌ Componentes Ausentes:",
+                "❌ Missing Components:",
                 *[f"  • {comp}" for comp in missing],
                 ""
             ])
     
-    # Seção de componentes encontrados (com detalhes limitados)
     if "found_components" in validation_result and include_details:
         found = validation_result["found_components"]
         if found:
-            lines.append("✅ Componentes Encontrados:")
+            lines.append("✅ Found Components:")
             for comp_name, details in list(found.items())[:10]:
                 lines.append(f"  • {comp_name}")
-                lines.append(f"    Status: {details.get('status', 'Desconhecido')}")
-                lines.append(f"    Versão: {details.get('version', 'N/A')}")
+                lines.append(f"    Status: {details.get('status', 'Unknown')}")
+                lines.append(f"    Version: {details.get('version', 'N/A')}")
             if len(found) > 10:
-                lines.append(f"  ... e mais {len(found) - 10}")
+                lines.append(f"  ... and {len(found) - 10} more")
             lines.append("")
     
-    # Rodapé do relatório
     lines.extend([
         "",
-        f"Gerado em: {format_timestamp()}",
-        "=" * 40
+        f"Generated at: {format_timestamp()}",
+        "=" * 32
     ])
     
     return "\n".join(lines)
 
 
 def parse_jira_components(components_data: List[Dict[str, Any]]) -> List[str]:
-    """Extrai nomes de componentes dos dados do campo de componentes do Jira.
+    """Extracts component names from Jira components field data.
 
-    A API do Jira frequentemente retorna componentes como uma lista de objetos.
-    Esta função extrai apenas o 'name' de cada objeto.
+    The Jira API often returns components as a list of objects.
+    This function extracts only the 'name' from each object.
 
     Args:
-        components_data: Os dados brutos de componentes da API do Jira,
-                         tipicamente uma lista de dicionários.
+        components_data: Raw component data from Jira API,
+                        typically a list of dictionaries.
 
     Returns:
-        Uma lista de strings com nomes de componentes.
+        A list of strings with component names.
 
     Example:
         >>> data = [{'id': '1', 'name': 'user-service'}, {'id': '2', 'name': 'auth-module'}]
@@ -505,16 +360,16 @@ def parse_jira_components(components_data: List[Dict[str, Any]]) -> List[str]:
 
 
 def parse_development_cycle(cycle_data: Any) -> str:
-    """Analisa o ciclo de desenvolvimento de um campo customizado do Jira.
+    """Parses development cycle from a Jira custom field.
 
-    Lida com diferentes estruturas de dados que um campo customizado pode ter
-    (ex: uma string ou um dicionário com chave 'value').
+    Handles different data structures that a custom field might have
+    (e.g., a string or a dictionary with a 'value' key).
 
     Args:
-        cycle_data: Os dados brutos do campo customizado do Jira.
+        cycle_data: Raw data from Jira custom field.
 
     Returns:
-        O ciclo de desenvolvimento como string, ou string vazia se não encontrado.
+        Development cycle as string, or empty string if not found.
 
     Example:
         >>> parse_development_cycle({'value': 'Sprint 23'})
@@ -525,7 +380,6 @@ def parse_development_cycle(cycle_data: Any) -> str:
         ''
     """
     if isinstance(cycle_data, dict):
-        # Formato de campo customizado do Jira
         return cycle_data.get("value", "")
     
     if isinstance(cycle_data, str):
@@ -539,59 +393,59 @@ def format_validation_scope(
     architecture: str, 
     components: List[str]
 ) -> str:
-    """Formata o escopo de validação para documentação.
+    """Formats validation scope for documentation.
 
-    Cria uma seção estruturada do escopo da validação de aderência
-    em formato Wiki/Confluence para documentação formal.
+    Creates a structured validation scope section in Wiki/Confluence
+    format for formal documentation.
 
     Args:
-        development_cycle: Ciclo de desenvolvimento atual.
-        architecture: Nome da arquitetura de referência.
-        components: Lista de componentes no escopo.
+        development_cycle: Current development cycle.
+        architecture: Reference architecture name.
+        components: List of components in scope.
 
     Returns:
-        String formatada em markup Wiki para o escopo de validação.
+        Wiki markup formatted string for validation scope.
 
     Example:
         >>> scope = format_validation_scope("Sprint 23", "Microservices v2", ["service-a", "service-b"])
         >>> print(scope)
-        h2. Escopo da Validação de Aderência
-        *Ciclo de Desenvolvimento:* Sprint 23
-        *Arquitetura de Referência:* Microservices v2
+        h2. Architecture Compliance Validation Scope
+        *Development Cycle:* Sprint 23
+        *Reference Architecture:* Microservices v2
         
-        h3. Componentes no Escopo:
+        h3. Components in Scope:
         * service-a
         * service-b
     """
     lines = [
-        "h2. Escopo da Validação de Aderência",
-        f"*Ciclo de Desenvolvimento:* {development_cycle or 'Não informado'}",
-        f"*Arquitetura de Referência:* {architecture or 'Não informada'}",
+        "h2. Architecture Compliance Validation Scope",
+        f"*Development Cycle:* {development_cycle or 'Not informed'}",
+        f"*Reference Architecture:* {architecture or 'Not informed'}",
         "",
-        "h3. Componentes no Escopo:"
+        "h3. Components in Scope:"
     ]
     
     if components:
         for component in components:
             lines.append(f"* {component}")
     else:
-        lines.append("_Nenhum componente informado._")
+        lines.append("_No components informed._")
         
     return "\n".join(lines)
 
 
 def format_version_changes(version_changes: List[Dict[str, str]]) -> str:
-    """Formata alterações de versão em formato de tabela Wiki.
+    """Formats version changes in Wiki table format.
 
-    Cria uma tabela estruturada das alterações de versão dos componentes
-    em formato Wiki/Confluence para documentação.
+    Creates a structured table of component version changes
+    in Wiki/Confluence format for documentation.
 
     Args:
-        version_changes: Lista de dicionários com informações de mudança de versão.
-                         Cada dicionário deve conter 'component', 'from_version', 'to_version'.
+        version_changes: List of dictionaries with version change information.
+                        Each dictionary should contain 'component', 'from_version', 'to_version'.
 
     Returns:
-        String formatada em markup Wiki com tabela de alterações.
+        Wiki markup formatted string with changes table.
 
     Example:
         >>> changes = [
@@ -599,17 +453,17 @@ def format_version_changes(version_changes: List[Dict[str, str]]) -> str:
         ...     {"component": "auth-module", "from_version": "2.0.0", "to_version": "2.1.0"}
         ... ]
         >>> print(format_version_changes(changes))
-        h2. Alterações de Versão dos Componentes
-        ||Componente||Versão Anterior||Nova Versão||
+        h2. Component Version Changes
+        ||Component||Previous Version||New Version||
         |user-service|1.0.0|1.1.0|
         |auth-module|2.0.0|2.1.0|
     """
     if not version_changes:
-        return "h3. Alterações de Versão\n_Nenhuma alteração de versão detectada._"
+        return "h3. Version Changes\n_No version changes detected._"
 
     lines = [
-        "h2. Alterações de Versão dos Componentes",
-        "||Componente||Versão Anterior||Nova Versão||"
+        "h2. Component Version Changes",
+        "||Component||Previous Version||New Version||"
     ]
     
     for change in version_changes:
@@ -619,3 +473,21 @@ def format_version_changes(version_changes: List[Dict[str, str]]) -> str:
         lines.append(f"|{component}|{from_version}|{to_version}|")
         
     return "\n".join(lines)
+
+
+def format_timestamp() -> str:
+    """Generates current timestamp for reports.
+
+    Creates a formatted timestamp string for use in validation reports
+    and documentation generation.
+
+    Returns:
+        Formatted timestamp string in ISO format.
+
+    Example:
+        >>> timestamp = format_timestamp()
+        >>> print(timestamp)
+        2024-01-15T14:30:45
+    """
+    from datetime import datetime
+    return datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
