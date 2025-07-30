@@ -12,9 +12,9 @@ from typing import Dict, Any
 
 from . import prompt
 
-USE_MOCK = os.getenv("USE_MOCK", "false").lower() == "true"
+USE_MOCK_TOOLS = os.getenv("USE_MOCK_TOOLS", "false").lower() == "true"
 
-if USE_MOCK:
+if USE_MOCK_TOOLS:
     from ...tools.mock.tools_mocked import (
         get_jira_ticket,
         validate_pdi_components,
@@ -25,7 +25,6 @@ else:
         get_jira_ticket,
         validate_pdi_components
     )
-    
     from ...tools.integrations.blizzdesign import validate_components_in_vt
 
 
@@ -122,7 +121,6 @@ async def validate_components_stage(
         }
 
 
-# Component Validation Subagent Configuration
 component_validation_agent = Agent(
     name="component_validation_subagent",
     model="gemini-2.5-flash",

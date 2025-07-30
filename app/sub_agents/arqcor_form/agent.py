@@ -11,9 +11,9 @@ from typing import Dict, Any, Optional
 
 from . import prompt
 
-USE_MOCK = os.getenv("USE_MOCK", "false").lower() == "true"
+USE_MOCK_TOOLS = os.getenv("USE_MOCK_TOOLS", "false").lower() == "true"
 
-if USE_MOCK:
+if USE_MOCK_TOOLS:
     from ...tools.mock.tools_mocked import (
         create_arqcor_form,
         update_arqcor_form_with_versions,
