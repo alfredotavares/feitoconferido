@@ -4,7 +4,7 @@ Provides tools for creating and managing Solution Adherence
 Evaluation forms in the ARQCOR system through Jira API.
 """
 
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from datetime import datetime, timezone
 from google.adk.tools import ToolContext
 
@@ -47,7 +47,6 @@ async def create_arqcor_form(
     settings = get_settings()
     
     try:
-        # Get validation data from context
         jira_data = tool_context.state.get(f"jira_ticket_{ticket_id}", {})
         vt_data = tool_context.state.get(f"vt_{ticket_id}", {})
         
@@ -56,46 +55,40 @@ async def create_arqcor_form(
                 "error": "Missing validation data. Please run component validation first."
             }
         
-        # Extract required data
         development_cycle = jira_data.get("development_cycle", "")
         components = jira_data.get("components", [])
         architecture = vt_data.get("architecture", "TO-BE")
         
-        # Format validation scope according to template
         validation_scope = format_validation_scope(
             development_cycle,
             architecture,
             components
         )
-        
-        # Prepare Jira issue creation payload
+
         issue_data = {
             "fields": {
                 "project": {
-                    "key": settings.arqcor.project_key  # Should be "ARQCOR"
+                    "key": settings.arqcor.project_key
                 },
                 "issuetype": {
-                    "name": "Formulário de Avaliação"  # Custom issue type for ARQCOR
+                    "name": "Formulário de Avaliação"
                 },
                 "summary": f"Avaliação de Aderência - {ticket_id}",
                 "description": f"Formulário de Avaliação de Aderência de Solução para {ticket_id}",
-                # Custom fields specific to ARQCOR forms
-                "customfield_arquiteto_responsavel": evaluator_name,  # Architect responsible
-                "customfield_escopo_validacao": validation_scope,     # Validation scope
-                "customfield_ticket_origem": ticket_id,              # Source ticket
+                "customfield_arquiteto_responsavel": evaluator_name,
+                "customfield_escopo_validacao": validation_scope,
+                "customfield_ticket_origem": ticket_id,
                 "customfield_data_avaliacao": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-                "customfield_status_formulario": "Draft"             # Form status
+                "customfield_status_formulario": "Draft"
             }
         }
         
-        # Create issue via Jira API
         client = await get_jira_client()
         response = await client.post("/rest/api/2/issue", json=issue_data)
         result = response.json()
         
-        form_id = result.get("key")  # Jira issue key (e.g., "ARQCOR-123")
+        form_id = result.get("key")
         
-        # Store form ID in context for later operations
         tool_context.state[f"arqcor_form_{ticket_id}"] = {
             "form_id": form_id,
             "created_at": datetime.now(timezone.utc).isoformat(),
@@ -139,7 +132,6 @@ async def update_arqcor_form_with_versions(
         {"form_id": "ARQCOR-2024-001", "updated": True}
     """
     try:
-        # Get version check results from context
         version_results = tool_context.state.get("version_check_results", {})
         
         if not version_results:
@@ -148,7 +140,6 @@ async def update_arqcor_form_with_versions(
                 "error": "No version check results found. Please run version check first."
             }
         
-        # Format version changes according to ARQCOR template
         version_changes = version_results.get("version_changes", [])
         changes_formatted = []
         
@@ -168,16 +159,13 @@ async def update_arqcor_form_with_versions(
         
         version_text = format_version_changes(changes_formatted)
         
-        # Get current form data from Jira
         client = await get_jira_client()
         response = await client.get(f"/rest/api/2/issue/{form_id}")
         current_issue = response.json()
         
-        # Update validation scope with version information
         current_scope = current_issue["fields"].get("customfield_escopo_validacao", "")
         updated_scope = current_scope + "\n\n" + version_text
         
-        # Update issue via Jira API
         update_data = {
             "fields": {
                 "customfield_escopo_validacao": updated_scope
@@ -186,7 +174,6 @@ async def update_arqcor_form_with_versions(
         
         await client.put(f"/rest/api/2/issue/{form_id}", json=update_data)
         
-        # Store update info in context
         tool_context.state[f"arqcor_form_versions_updated_{form_id}"] = True
         
         return {
@@ -241,7 +228,6 @@ async def add_validation_checklist_to_form(
         {"form_id": "ARQCOR-2024-001", "checklist_added": True}
     """
     try:
-        # Format checklist according to ARQCOR criteria structure
         checklist_text = "\n\nChecklist de Validação de Aderência:\n"
         
         for i, item in enumerate(checklist_items, 1):
@@ -252,28 +238,23 @@ async def add_validation_checklist_to_form(
                 checklist_text += f"\n   Observação: {item['notes']}"
             checklist_text += "\n"
         
-        # Get current issue from Jira
         client = await get_jira_client()
         response = await client.get(f"/rest/api/2/issue/{form_id}")
         current_issue = response.json()
         
-        # Update validation scope with checklist
         current_scope = current_issue["fields"].get("customfield_escopo_validacao", "")
         updated_scope = current_scope + checklist_text
         
-        # Calculate overall result
         total_items = len(checklist_items)
         approved_items = sum(1 for item in checklist_items if item["result"] == "SIM")
         
-        # Determine final opinion based on checklist results
         if approved_items == total_items:
             parecer_final = "Aderente"
-        elif approved_items >= total_items * 0.8:  # 80% threshold
+        elif approved_items >= total_items * 0.8:
             parecer_final = "Aderente com débito"
         else:
             parecer_final = "Não Aderente"
         
-        # Update issue with checklist and final opinion
         update_data = {
             "fields": {
                 "customfield_escopo_validacao": updated_scope,
@@ -322,16 +303,14 @@ async def submit_arqcor_form(form_id: str, tool_context: ToolContext) -> Dict[st
     try:
         client = await get_jira_client()
         
-        # Transition issue to "Em Avaliação" status
         transition_data = {
             "transition": {
-                "id": "41"  # Transition ID for "Submit for Review" (needs to be configured)
+                "id": "41"
             }
         }
         
         await client.post(f"/rest/api/2/issue/{form_id}/transitions", json=transition_data)
         
-        # Update form status field
         update_data = {
             "fields": {
                 "customfield_status_formulario": "Em Avaliação",
