@@ -4,7 +4,6 @@ This module manages all configuration settings using pydantic-settings,
 loading values from environment variables with validation.
 """
 
-import os
 from typing import Optional
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
