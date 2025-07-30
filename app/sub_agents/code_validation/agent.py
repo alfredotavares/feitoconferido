@@ -119,8 +119,8 @@ async def validate_code_repository(
         
         clone_result = await clone_repository(
             repository_url,
-            repository_info.get("default_branch", "main"),
-            tool_context
+            tool_context,
+            repository_info.get("default_branch", "main")
         )
         
         if not clone_result.get("success"):
