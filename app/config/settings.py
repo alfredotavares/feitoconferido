@@ -122,6 +122,7 @@ class ARQCORSettings(BaseSettings):
 
     base_url: str = Field(default="", description="ARQCOR API base URL")
     client_id: str = Field(default="", description="OAuth2 client ID")
+    project_key: str = Field(default="ARQCOR", description="Project key for ARQCOR")
     client_secret: str = Field(default="", description="OAuth2 client secret")
     timeout: int = Field(default=45, description="Request timeout in seconds")
     form_template_id: str = Field(
