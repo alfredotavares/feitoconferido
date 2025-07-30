@@ -2,10 +2,8 @@ import os
 from typing import Dict, Any, Optional
 
 from google.adk.agents import Agent
-from google.adk.tools import ToolContext
 
 from . import prompt
-from app.tools import orchestrate_validation
 
 from app.sub_agents import (
     component_validation_agent,
@@ -21,8 +19,7 @@ root_agent = Agent(
     model=MODEL,
     description="Core orchestrator for architectural compliance validation using specialized subagents.",
     instruction=prompt.FEITO_CONFERIDO_AGENT_PROMPT,
-    tools=[orchestrate_validation],
-    subagents=[
+    sub_agents=[
         component_validation_agent,
         arqcor_form_agent,
         version_check_agent,
