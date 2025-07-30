@@ -339,7 +339,7 @@ async def validate_code_and_contracts(
 # Code Validation Subagent Configuration  
 code_validation_agent = Agent(
     name="code_validation_subagent",
-    model="claude-3-5-sonnet-20241022",
+    model="gemini-2.5-flash",
     description="Subagente especializado para validação de código-fonte e contratos de API.",
     instruction=prompt.CODE_VALIDATION_PROMPT,
     tools=[validate_code_and_contracts]

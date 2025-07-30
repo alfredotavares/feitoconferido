@@ -111,7 +111,7 @@ async def validate_components_stage(
 # Component Validation Subagent Configuration
 component_validation_agent = Agent(
     name="component_validation_subagent",
-    model="claude-3-5-sonnet-20241022",
+    model="gemini-2.5-flash",
     description="Subagente especializado para validar componentes arquitetônicos em relação à Visão Técnica.",
     instruction=prompt.COMPONENT_VALIDATION_PROMPT,
     tools=[validate_components_stage]
