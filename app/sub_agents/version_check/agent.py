@@ -4,13 +4,21 @@ This subagent compares deployment versions with production versions
 using Component (Portal Tech) to identify major changes or new components.
 """
 
+import os
 from google.adk.agents import Agent
 from google.adk.tools import ToolContext
 from typing import Dict, List, Any
 
 from . import prompt
 
-from ...tools.integrations.portal_tech import check_multiple_component_versions
+USE_MOCK = os.getenv("USE_MOCK", "false").lower() == "true"
+
+if USE_MOCK:
+    from ...tools.mock.tools_mocked import check_multiple_component_versions
+else:
+    from ...tools.integrations.portal_tech import (
+        check_multiple_component_versions
+    )
 
 
 async def check_component_versions(
@@ -87,7 +95,6 @@ async def check_component_versions(
         }
 
 
-# Version Check Subagent Configuration
 version_check_agent = Agent(
     name="version_check_subagent",
     model="gemini-2.0-flash",

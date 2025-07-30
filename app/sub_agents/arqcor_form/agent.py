@@ -4,16 +4,26 @@ This subagent handles the creation and management of ARQCOR forms
 for documenting the architectural compliance validation process.
 """
 
+import os
 from google.adk.agents import Agent
 from google.adk.tools import ToolContext
 from typing import Dict, Any, Optional
 
 from . import prompt
 
-from ...tools.integrations.arqcor import (
-    create_arqcor_form,
-    update_arqcor_form_with_versions,
-    add_validation_checklist_to_form
+USE_MOCK = os.getenv("USE_MOCK", "false").lower() == "true"
+
+if USE_MOCK:
+    from ...tools.mock.tools_mocked import (
+        create_arqcor_form,
+        update_arqcor_form_with_versions,
+        add_validation_checklist_to_form
+    )
+else:
+    from ...tools.integrations.arqcor import (
+        create_arqcor_form,
+        update_arqcor_form_with_versions,
+        add_validation_checklist_to_form
 )
 
 

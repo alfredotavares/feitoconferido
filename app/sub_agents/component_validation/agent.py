@@ -5,14 +5,28 @@ are approved in the Technical Vision (VT). It handles the critical first stage
 of the FEITO CONFERIDO validation process.
 """
 
+import os
 from google.adk.agents import Agent
 from google.adk.tools import ToolContext
 from typing import Dict, Any
 
 from . import prompt
 
-from ...tools.integrations.jira import get_jira_ticket, validate_pdi_components
-from ...tools.integrations.blizzdesign import validate_components_in_vt
+USE_MOCK = os.getenv("USE_MOCK", "false").lower() == "true"
+
+if USE_MOCK:
+    from ...tools.mock.tools_mocked import (
+        get_jira_ticket,
+        validate_pdi_components,
+        validate_components_in_vt
+    )
+else:
+    from ...tools.integrations.jira import (
+        get_jira_ticket,
+        validate_pdi_components
+    )
+    
+    from ...tools.integrations.blizzdesign import validate_components_in_vt
 
 
 async def validate_components_stage(

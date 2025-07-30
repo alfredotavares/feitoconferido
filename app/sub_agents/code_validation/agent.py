@@ -4,13 +4,27 @@ This subagent validates repository structure, dependencies, and OpenAPI
 contracts, identifying manual actions needed for API Gateway components.
 """
 
+import os
 from google.adk.agents import Agent
 from google.adk.tools import ToolContext
 from typing import Dict, List, Any, Optional
 
 from . import prompt
 
-from ...tools.integrations.git import (
+USE_MOCK = os.getenv("USE_MOCK", "false").lower() == "true"
+
+if USE_MOCK:
+    from ...tools.mock.tools_mocked import (
+        get_repository_info,
+        list_repository_tags,
+        clone_repository,
+        analyze_project_structure,
+        validate_dependencies,
+        find_openapi_spec,
+        cleanup_repository
+    )
+else:
+    from ...tools.integrations.git import (
         clone_repository,
         analyze_project_structure,
         validate_dependencies,
@@ -22,6 +36,7 @@ from ...tools.integrations.bitbucket import (
         get_repository_info,
         list_repository_tags
     )
+
 
 async def validate_code_repository(
     repository_url: str,
