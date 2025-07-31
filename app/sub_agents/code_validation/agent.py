@@ -11,7 +11,7 @@ from typing import Dict, List, Any, Optional
 
 from . import prompt
 
-USE_MOCK_TOOLS = os.getenv("USE_MOCK_TOOLS", "false").lower() == "true"
+USE_MOCK_TOOLS = os.getenv("USE_MOCK_TOOLS", "true").lower() == "true"
 
 if USE_MOCK_TOOLS:
     from ...tools.mock.tools_mocked import (
