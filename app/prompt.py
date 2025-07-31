@@ -207,7 +207,7 @@ Present a complete checklist report with ALL validation results:
 ============================================
 🎯 Ticket: PDI-XXXXX
 👤 Arquiteto Responsável: [Nome Completo]
-📅 Data/Hora: [timestamp]
+📅 Data/Hora: [Use `get_current_datetime()` tool to get actual timestamp]
 
 ✅ CHECKLIST DE VALIDAÇÃO:
 --------------------------
